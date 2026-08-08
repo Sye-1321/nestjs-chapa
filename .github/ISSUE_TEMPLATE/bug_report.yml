@@ -1,0 +1,91 @@
+name: Bug Report
+description: Report a bug to help us improve.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **SECURITY WARNING:** Security vulnerabilities, leaked credentials, webhook secrets, authentication bypasses, or other confidential security reports **MUST NOT** be submitted through public issues. Please refer to [SECURITY.md](/Sye-1321/nestjs-chapa/security/policy) and use GitHub Private Vulnerability Reporting.
+
+        **DATA SAFETY WARNING:** Do not include real API keys, secrets, authorization headers, webhook signatures tied to real secrets, PII, real account identifiers, or real customer/payment information. Examples must use fictional, sanitized data.
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Concise Problem Description
+      description: Describe the bug in 1-2 sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction Steps
+      description: How can we reproduce this issue?
+    validations:
+      required: true
+  - type: input
+    id: minimal-reproduction
+    attributes:
+      label: Minimal Reproduction
+      description: Provide a link to a minimal reproduction (e.g., GitHub repo, StackBlitz) where applicable.
+    validations:
+      required: false
+  - type: input
+    id: package-version
+    attributes:
+      label: Package Version
+      description: What version of @sye1321/nestjs-chapa are you using (if using a released version)?
+    validations:
+      required: false
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: What version of Node.js are you using?
+    validations:
+      required: true
+  - type: input
+    id: nestjs-version
+    attributes:
+      label: NestJS Version
+      description: What version of NestJS are you using?
+    validations:
+      required: true
+  - type: input
+    id: os-environment
+    attributes:
+      label: Operating System / Runtime Environment
+      description: E.g., Ubuntu 22.04, Windows 11, macOS 14, Docker, AWS Lambda.
+    validations:
+      required: true
+  - type: textarea
+    id: error-logs
+    attributes:
+      label: Relevant Logs / Error Output
+      description: Please paste relevant, sanitized logs or error stack traces. Do not paste real secrets.
+    validations:
+      required: false
+  - type: checkboxes
+    id: data-safety-verification
+    attributes:
+      label: Data Safety Verification
+      description: You must confirm the following before submitting.
+      options:
+        - label: I confirm that no real API keys, secrets, authorization headers, or webhook signatures generated with real secrets are included in this issue.
+          required: true
+        - label: I confirm that no PII, real account identifiers, or real customer/payment data are included.
+          required: true
+        - label: I confirm that any provided examples use fictional, sanitized data.
+          required: true

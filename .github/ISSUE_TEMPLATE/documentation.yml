@@ -1,0 +1,58 @@
+name: Documentation Issue
+description: Report errors, ambiguities, or missing information in documentation.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **SECURITY WARNING:** Security vulnerabilities, leaked credentials, webhook secrets, authentication bypasses, or other confidential security reports **MUST NOT** be submitted through public issues. Please refer to [SECURITY.md](/Sye-1321/nestjs-chapa/security/policy) and use GitHub Private Vulnerability Reporting.
+
+        **DATA SAFETY WARNING:** Do not include real API keys, secrets, authorization headers, webhook signatures tied to real secrets, PII, real account identifiers, or real customer/payment information. Examples must use fictional, sanitized data.
+  - type: input
+    id: affected-section
+    attributes:
+      label: Affected Documentation / File / Section
+      description: E.g., README.md, technical specification section 4.1.
+    validations:
+      required: true
+  - type: textarea
+    id: problem-ambiguity
+    attributes:
+      label: Problem or Ambiguity
+      description: Describe the issue with the current documentation.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-correction
+    attributes:
+      label: Expected Correction
+      description: What should the documentation explain instead?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-wording
+    attributes:
+      label: Proposed Wording (Optional)
+      description: Feel free to suggest exact wording for the correction.
+    validations:
+      required: false
+  - type: dropdown
+    id: impact-interpretation
+    attributes:
+      label: Does this problem affect API / provider / safety interpretation?
+      options:
+        - "Yes, it impacts how developers understand safety/security/API usage."
+        - "No, it is a typo, formatting issue, or minor clarification."
+    validations:
+      required: true
+  - type: checkboxes
+    id: data-safety-verification
+    attributes:
+      label: Data Safety Verification
+      description: You must confirm the following before submitting.
+      options:
+        - label: I confirm that no real API keys, secrets, authorization headers, or webhook signatures generated with real secrets are included in this issue.
+          required: true
+        - label: I confirm that no PII, real account identifiers, or real customer/payment data are included.
+          required: true
+        - label: I confirm that any provided examples use fictional, sanitized data.
+          required: true

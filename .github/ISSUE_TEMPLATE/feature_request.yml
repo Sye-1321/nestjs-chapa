@@ -1,0 +1,65 @@
+name: Feature Request
+description: Propose a new feature, capability, or enhancement.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **SECURITY WARNING:** Security vulnerabilities, leaked credentials, webhook secrets, authentication bypasses, or other confidential security reports **MUST NOT** be submitted through public issues. Please refer to [SECURITY.md](/Sye-1321/nestjs-chapa/security/policy) and use GitHub Private Vulnerability Reporting.
+
+        **DATA SAFETY WARNING:** Do not include real API keys, secrets, authorization headers, webhook signatures tied to real secrets, PII, real account identifiers, or real customer/payment information. Examples must use fictional, sanitized data.
+
+        **SCOPE NOTICE:** Feature requests **do not override** the technical specification, M0.5 evidence requirements, accepted ADRs, or the approved v1 scope. Please note that a requested feature may be declined or deferred if it falls outside the v1 scope.
+  - type: textarea
+    id: problem-use-case
+    attributes:
+      label: Problem / Use Case
+      description: Describe the problem you are trying to solve or the use case this feature supports.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-capability
+    attributes:
+      label: Proposed Capability
+      description: Describe the feature or capability you want to add.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: Alternatives Considered
+      description: What other solutions or workarounds have you tried or considered?
+    validations:
+      required: true
+  - type: textarea
+    id: public-api-impact
+    attributes:
+      label: Public API Impact
+      description: How would this change the public API boundary?
+    validations:
+      required: true
+  - type: textarea
+    id: provider-contract-impact
+    attributes:
+      label: Chapa / Provider-Contract Impact
+      description: Does this rely on undocumented Chapa behavior or require new provider contracts?
+    validations:
+      required: true
+  - type: textarea
+    id: safety-impact
+    attributes:
+      label: Security / Reliability / Payment-Safety Impact
+      description: Does this introduce risks related to idempotency, retries, or data safety?
+    validations:
+      required: true
+  - type: checkboxes
+    id: data-safety-verification
+    attributes:
+      label: Data Safety Verification
+      description: You must confirm the following before submitting.
+      options:
+        - label: I confirm that no real API keys, secrets, authorization headers, or webhook signatures generated with real secrets are included in this issue.
+          required: true
+        - label: I confirm that no PII, real account identifiers, or real customer/payment data are included.
+          required: true
+        - label: I confirm that any provided examples use fictional, sanitized data.
+          required: true
