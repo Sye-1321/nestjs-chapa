@@ -14,8 +14,8 @@ A complete released-version support matrix will be published here when versioned
 
 **DO NOT** report security vulnerabilities through public GitHub issues, discussions, or pull requests. Confidential vulnerabilities must never be reported through public channels.
 
-GitHub Private Vulnerability Reporting / Security Advisories are the required private mechanism for this repository once enabled. Enabling that repository feature is a manual M1 gate before AC-SEC-04 is fully satisfied. No fake email or contact placeholder is allowed.
+GitHub Private Vulnerability Reporting / Security Advisories are the required confidential mechanism for this repository. No email address or contact placeholder is used.
 
-Once enabled, please report any suspected security vulnerability by navigating to the "Security" tab in this repository and clicking "Report a vulnerability" to open a confidential Security Advisory.
+Please report any suspected security vulnerability by navigating to the "Security" tab in this repository and clicking "Report a vulnerability" to open a confidential Security Advisory.
 
 All reports will be assessed by the initial maintainer, who acts as the security-response authority. We will collaborate with you to resolve verified vulnerabilities before public disclosure.

@@ -1,6 +1,6 @@
 # Implementation Plan: Governance State Synchronization
 
-**Status**: Approved
+**Status**: In Progress
 **Owner**: Sye (Sye-1321)
 
 ## Goal
@@ -154,6 +154,7 @@ If this post-merge activation check fails:
   - pre-merge verification will validate configuration correctness and the confidential target;
   - final rendered chooser validation becomes an explicit post-merge activation check;
   - this discovery does not change implementation scope, architecture, requirements, provider behavior, or public API.
+  - Implementation Note: Validated that target URL `https://github.com/Sye-1321/nestjs-chapa/security/advisories/new` is an absolute HTTPS URL belonging to repository `Sye-1321/nestjs-chapa` targeting GitHub Private Vulnerability Reporting, and confirmed GitHub Private Vulnerability Reporting remains enabled.
 
 ## Definition of Done
 
