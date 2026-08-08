@@ -60,8 +60,13 @@ Explicitly, this work does **NOT**:
 - Preserve `blank_issues_enabled: false`.
 - Add a single `contact_links` entry for security reporting using the GitHub-supported structure (`name`, `url`, `about`).
 - The `url` must use a validated absolute HTTPS URL for this repository's private vulnerability-reporting entry point (expected target: `https://github.com/Sye-1321/nestjs-chapa/security/advisories/new`).
-- The exact URL and GitHub issue-chooser behavior must be validated before merge. The contact must direct to confidential GitHub vulnerability reporting, never to a public issue.
+- The plan must require validation that:
+  - the URL is absolute HTTPS;
+  - it refers to this repository;
+  - it is intended for confidential vulnerability reporting;
+  - it does not create a public GitHub issue.
 - Do not add unrelated contact links.
+- Do not invent an email or alternative disclosure mechanism.
 
 ### 3. `SUPPORT.md`
 - Preserve standard GitHub Issue instructions for ordinary bugs and feature requests.
@@ -103,9 +108,15 @@ Also require explicit checks that:
 - no `package.json` is introduced;
 - no `.github/workflows/` is introduced;
 - no secrets or PII are added;
-- `config.yml` uses valid GitHub `contact_links` structure;
-- the security contact uses an absolute HTTPS URL;
-- the target opens GitHub's confidential vulnerability-reporting mechanism, not public issue creation.
+- validate `config.yml` YAML syntax/structure;
+- confirm `blank_issues_enabled` remains false;
+- confirm exactly one intended security contact link is added;
+- confirm `contact_links` uses name, url, and about;
+- confirm the URL is absolute HTTPS;
+- confirm the URL targets this repository's private GitHub vulnerability-reporting flow;
+- confirm GitHub Private Vulnerability Reporting remains enabled;
+- confirm `SECURITY.md`, `SUPPORT.md`, `config.yml`, and all issue forms consistently prohibit public vulnerability disclosure;
+- confirm no public issue-creation URL is used.
 
 ### Post-Commit / Branch Verification
 ```bash
@@ -117,13 +128,44 @@ git --no-pager diff main...HEAD -- docs/specification/TECHNICAL_SPECIFICATION.md
 git --no-pager log --oneline main..HEAD
 ```
 
+### Post-Merge Activation Verification
+After the governance synchronization PR is merged into `main`, the maintainer must verify on GitHub that:
+1. Open the repository's New Issue / issue-template chooser.
+2. Confirm the security contact option is rendered.
+3. Activate that option.
+4. Confirm it opens GitHub's confidential vulnerability-reporting flow rather than public issue creation.
+5. Confirm ordinary bug, documentation, and feature-request forms still render.
+6. Confirm blank public issues remain disabled for normal contributors.
+
+If this post-merge activation check fails:
+- do not enter M0.5;
+- open a narrowly scoped corrective governance PR;
+- do not substitute a guessed disclosure mechanism.
+
 ## Risks / Open Questions
-- Confirm the final absolute GitHub Private Vulnerability Reporting URL and verify that the configured contact link renders correctly in the repository issue chooser before merge. If this cannot be validated, implementation stops instead of broadening scope or inventing another disclosure mechanism.
+- Pre-merge: validate configuration structure and private-reporting target.
+- Post-merge: validate actual default-branch issue-chooser rendering and navigation.
+- An invalid or unverified security target must not be replaced with a guessed route.
+
+## Discoveries / Plan Updates
+- **2026-08-08**:
+  - GitHub issue-chooser configuration is activated/rendered from the default branch;
+  - therefore final rendered chooser behavior cannot be verified from this unmerged feature branch;
+  - pre-merge verification will validate configuration correctness and the confidential target;
+  - final rendered chooser validation becomes an explicit post-merge activation check;
+  - this discovery does not change implementation scope, architecture, requirements, provider behavior, or public API.
 
 ## Definition of Done
-- `SECURITY.md` updated to reflect enabled private vulnerability reporting.
-- `config.yml` updated with a valid `contact_links` security redirect pointing to an absolute HTTPS URL for confidential reporting.
-- `SUPPORT.md` updated with explicit security report redirection.
-- `CHANGELOG.md` reflects recent governance changes.
-- All verification commands executed and criteria passed.
-- No other files modified.
+
+For the implementation PR to be merge-ready:
+- `SECURITY.md` reflects enabled Private Vulnerability Reporting;
+- `config.yml` contains valid security contact configuration;
+- `SUPPORT.md` contains the security exception;
+- `CHANGELOG.md` reflects the governance changes;
+- all pre-merge verification passes;
+- only authorized files change;
+- specification/package/code/M0.5 boundaries remain untouched.
+
+For the overall governance synchronization to be operationally closed:
+- the PR has been merged into `main`;
+- the post-merge issue-chooser activation check has passed.
