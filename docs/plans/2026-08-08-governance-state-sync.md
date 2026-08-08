@@ -1,6 +1,6 @@
 # Implementation Plan: Governance State Synchronization
 
-**Status**: In Progress
+**Status**: Completed
 **Owner**: Sye (Sye-1321)
 
 ## Goal
@@ -155,6 +155,14 @@ If this post-merge activation check fails:
   - final rendered chooser validation becomes an explicit post-merge activation check;
   - this discovery does not change implementation scope, architecture, requirements, provider behavior, or public API.
   - Implementation Note: Validated that target URL `https://github.com/Sye-1321/nestjs-chapa/security/advisories/new` is an absolute HTTPS URL belonging to repository `Sye-1321/nestjs-chapa` targeting GitHub Private Vulnerability Reporting, and confirmed GitHub Private Vulnerability Reporting remains enabled.
+- **2026-08-08 (Post-Merge Verification & Closeout)**:
+  - PR #3 was merged into main;
+  - the three structured issue forms render correctly;
+  - the GitHub-native security-policy entry opens `/security/policy`;
+  - the custom security contact link opens `/security/advisories/new`, correctly reaching GitHub's confidential vulnerability-reporting flow without creating a public issue;
+  - blank public issues remain disabled for ordinary contributors (`blank_issues_enabled: false`); the visible maintainer-only blank issue option is expected behavior for repository maintainers;
+  - duplicate visible title wording ("Report a security vulnerability") was discovered between GitHub's native security entry and the custom contact link;
+  - the custom link was renamed to "Submit a private vulnerability report" to resolve title ambiguity in the chooser without changing its target URL or confidential security behavior.
 
 ## Definition of Done
 
