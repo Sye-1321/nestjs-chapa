@@ -464,9 +464,9 @@ describe('M0.5-A Harness Tests', () => {
        const escapeDir = path.resolve(process.platform === 'win32' ? 'C:\\temp\\escape-link' : '/tmp/escape-link');
        await fs.mkdir(escapeDir, { recursive: true });
        const linkPath = path.join(harnessRawRoot, 'link-out');
-       
+
        await fs.mkdir(harnessRawRoot, { recursive: true }).catch(() => {});
-       
+
        try {
          await fs.symlink(escapeDir, linkPath, process.platform === 'win32' ? 'junction' : 'dir');
        } catch (err) {
@@ -476,7 +476,7 @@ describe('M0.5-A Harness Tests', () => {
          }
          throw err;
        }
-       
+
        t.after(async () => {
          try { await fs.unlink(linkPath); } catch (e) {}
          try { await fs.rm(escapeDir, { recursive: true, force: true }); } catch (e) {}
@@ -486,7 +486,7 @@ describe('M0.5-A Harness Tests', () => {
          () => captureRaw({ url: 'http://127.0.0.1', rawBytes: new Uint8Array() }, linkPath),
          /Capture failed/
        );
-       
+
        const files = await fs.readdir(escapeDir);
        assert.strictEqual(files.length, 0);
     });
@@ -494,14 +494,14 @@ describe('M0.5-A Harness Tests', () => {
     test('ROOT LINK ESCAPE: captureRaw rejects symbolic root', async (t) => {
        const escapeDir = path.resolve(process.platform === 'win32' ? 'C:\\temp\\root-escape' : '/tmp/root-escape');
        await fs.mkdir(escapeDir, { recursive: true });
-       
+
        const backupPath = harnessRawRoot + '.bak';
        try {
          await fs.rename(harnessRawRoot, backupPath);
        } catch (err) {
          if (err.code !== 'ENOENT') throw err;
        }
-       
+
        try {
          await fs.symlink(escapeDir, harnessRawRoot, process.platform === 'win32' ? 'junction' : 'dir');
        } catch (err) {
@@ -512,7 +512,7 @@ describe('M0.5-A Harness Tests', () => {
          }
          throw err;
        }
-       
+
        t.after(async () => {
          try { await fs.unlink(harnessRawRoot); } catch (e) {}
          try { await fs.rename(backupPath, harnessRawRoot); } catch (e) {}
@@ -523,7 +523,7 @@ describe('M0.5-A Harness Tests', () => {
          () => captureRaw({ url: 'http://127.0.0.1', rawBytes: new Uint8Array() }),
          /Capture failed/
        );
-       
+
        const files = await fs.readdir(escapeDir);
        assert.strictEqual(files.length, 0);
     });
@@ -533,10 +533,10 @@ describe('M0.5-A Harness Tests', () => {
        t.after(async () => {
          try { await fs.rm(childDir, { recursive: true, force: true }); } catch(e) {}
        });
-       
+
        const file = await captureRaw({ url: 'http://127.0.0.1', rawBytes: new Uint8Array() }, childDir);
        assert.ok(file.startsWith(childDir));
-       
+
        const stats = await fs.lstat(childDir);
        assert.ok(stats.isDirectory());
        assert.ok(!stats.isSymbolicLink());
