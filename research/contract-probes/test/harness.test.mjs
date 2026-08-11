@@ -305,6 +305,16 @@ describe('M0.5-A Harness Tests', () => {
       const res = await executeRequest(url);
       assert.strictEqual(res.attemptCount, 1);
     });
+
+    test('normal M0.5-A loopback mode does not expose unknownHeaderNames', async (t) => {
+      const { url } = await createLocalServer(t, (req, res) => {
+        res.setHeader('x-harness-id', 'test-id');
+        res.end();
+      });
+      const res = await executeRequest(url);
+      assert.strictEqual(res.headers['x-harness-id'], undefined);
+      assert.strictEqual(res.unknownHeaderNames, undefined);
+    });
   });
 
   describe('G. AUTHORIZATION/CAPTURE SAFETY', () => {
@@ -712,6 +722,358 @@ describe('M0.5-A Harness Tests', () => {
       assert.deepStrictEqual(decodedBytes, metadata.rawBytes);
 
       assert.ok(!contentStr.includes('synthetic'));
+    });
+  });
+
+  describe('J. M0.5-B PROVIDER BOUNDARY', () => {
+    test('A. IMPORT / DEFAULT SAFETY: zero network calls on import and build', async () => {
+      let callCount = 0;
+      const fakeFetch = async () => {
+        callCount++;
+        throw new Error('Fetch should not be called');
+      };
+      const origFetch = globalThis.fetch;
+      globalThis.fetch = fakeFetch;
+      try {
+        const probe = await import('../probe.mjs');
+        assert.strictEqual(probe.buildBanksUrl(), 'https://api.chapa.co/v1/banks');
+        assert.strictEqual(probe.buildCurrenciesUrl(), 'https://api.chapa.co/v1/currency_supported');
+        assert.strictEqual(probe.buildVerifyUnknownUrl('safe-ref'), 'https://api.chapa.co/v1/transaction/verify/safe-ref');
+        assert.strictEqual(callCount, 0);
+      } finally {
+        globalThis.fetch = origFetch;
+      }
+    });
+
+    test('PROVE B3 BUILDER VALIDATION INDEPENDENTLY', async () => {
+      const probe = await import('../probe.mjs');
+
+      // Valid reference is preserved exactly
+      const validRef = 'M05B_unknown_20260811_A1';
+      assert.strictEqual(probe.buildVerifyUnknownUrl(validRef), `https://api.chapa.co/v1/transaction/verify/${validRef}`);
+
+      // Explicitly reject invalid inputs
+      const invalidInputs = [
+        undefined, null, '', '   ', 'a b', '.', '..', 'a/b', 'a\\\\b', 'a%2Fb', 'a%2fb', 'a%3Fb', '%', 'ä', 'a?b', 'a#b'
+      ];
+
+      for (const input of invalidInputs) {
+        assert.throws(() => probe.buildVerifyUnknownUrl(input), /Invalid reference: fails local harness safety grammar/);
+      }
+    });
+
+    test('PROVIDER MODE BOOLEAN PRECISION', async () => {
+      const mockFetch = async () => { throw new Error('Fetch should not be called'); };
+      const { executeRequest } = await import('../lib/request.mjs');
+
+      // Truthy non-boolean values fall back to loopback validation and fail because external host is used
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/banks', { providerMode: 'true', fetch: mockFetch }),
+        /Network guard: Only loopback execution is allowed in M0.5-A/
+      );
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/banks', { providerMode: 1, fetch: mockFetch }),
+        /Network guard: Only loopback execution is allowed in M0.5-A/
+      );
+    });
+
+    test('A. IMPORT / DEFAULT SAFETY: provider mode without injected fetch rejects before network', async () => {
+      const probe = await import('../probe.mjs');
+      await assert.rejects(
+        () => probe.executeOperation('banks', null, {}),
+        /Provider execution blocked: no injected fetch function/
+      );
+      await assert.rejects(
+        () => probe.executeOperation('banks', null, { fetch: 'not-a-function' }),
+        /Provider execution blocked: no injected fetch function/
+      );
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/banks', { providerMode: true }),
+        /Provider guard: injected fetch function is explicitly required/
+      );
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/banks', { providerMode: true, fetch: 'not-a-function' }),
+        /Provider guard: injected fetch function is explicitly required/
+      );
+    });
+
+    test('B. EXACT URL / HOST SAFETY: rejects non-approved cases', async () => {
+      let callCount = 0;
+      const mockFetch = async () => {
+        callCount++;
+        throw new Error('Fetch should not be called');
+      };
+
+      const tests = [
+        ['http protocol', 'http://api.chapa.co/v1/banks'],
+        ['evil host', 'https://evil.api.chapa.co/v1/banks'],
+        ['suffix evil', 'https://api.chapa.co.evil.example/v1/banks'],
+        ['non-standard port', 'https://api.chapa.co:8443/v1/banks'],
+        ['userinfo', 'https://user:pass@api.chapa.co/v1/banks'],
+        ['query', 'https://api.chapa.co/v1/banks?x=1'],
+        ['fragment', 'https://api.chapa.co/v1/banks#fragment'],
+        ['initialize path', 'https://api.chapa.co/v1/transaction/initialize'],
+        ['cancel path', 'https://api.chapa.co/v1/transaction/cancel/ref'],
+        ['refund path', 'https://api.chapa.co/v1/refund/ref'],
+        ['v2 banks', 'https://api.chapa.co/v2/banks'],
+        ['arbitrary unknown', 'https://api.chapa.co/v1/arbitrary'],
+        ['malformed verify (empty ref)', 'https://api.chapa.co/v1/transaction/verify/'],
+        ['extra path segment', 'https://api.chapa.co/v1/transaction/verify/ref/extra'],
+        ['traversal', 'https://api.chapa.co/v1/transaction/verify/../banks'],
+        ['unsafe reference char', 'https://api.chapa.co/v1/transaction/verify/unsafe!char'],
+        ['encoded slash', 'https://api.chapa.co/v1/transaction/verify/a%2Fb'],
+        ['whitespace', 'https://api.chapa.co/v1/transaction/verify/a b']
+      ];
+
+      for (const [name, url] of tests) {
+        callCount = 0;
+        await assert.rejects(
+          () => executeRequest(url, { providerMode: true, fetch: mockFetch }),
+          /Provider guard/
+        );
+        assert.strictEqual(callCount, 0, `Fetch called for ${name}`);
+      }
+
+      callCount = 0;
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/banks', { providerMode: true, fetch: mockFetch, method: 'POST' }),
+        /Method must be exactly GET/
+      );
+      assert.strictEqual(callCount, 0);
+
+      callCount = 0;
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/banks', { providerMode: true, fetch: mockFetch, method: 'PUT' }),
+        /Method must be exactly GET/
+      );
+      assert.strictEqual(callCount, 0);
+    });
+
+    test('C. BODY SAFETY', async () => {
+      let callCount = 0;
+      const mockFetch = async () => {
+        callCount++;
+        throw new Error('Fetch should not be called');
+      };
+      const url = 'https://api.chapa.co/v1/banks';
+
+      await assert.rejects(() => executeRequest(url, { providerMode: true, fetch: mockFetch, body: 'data' }), /GET requests must not carry a body/);
+      assert.strictEqual(callCount, 0);
+
+      await assert.rejects(() => executeRequest(url, { providerMode: true, fetch: mockFetch, body: '' }), /GET requests must not carry a body/);
+      assert.strictEqual(callCount, 0);
+
+      await assert.rejects(() => executeRequest(url, { providerMode: true, fetch: mockFetch, body: new Uint8Array(0) }), /GET requests must not carry a body/);
+      assert.strictEqual(callCount, 0);
+    });
+
+    test('D. ACCEPTED FAKE PROVIDER REQUESTS', async () => {
+      let callCount = 0;
+      let lastUrl = '';
+      let lastMethod = '';
+      let lastRedirect = '';
+
+      const mockFetch = async (url, options) => {
+        callCount++;
+        lastUrl = url.toString();
+        lastMethod = options.method;
+        lastRedirect = options.redirect;
+        return {
+          arrayBuffer: async () => new ArrayBuffer(0),
+          headers: new Headers(),
+          status: 200
+        };
+      };
+
+      const probe = await import('../probe.mjs');
+
+      let res = await probe.executeOperation('banks', null, { fetch: mockFetch });
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(lastUrl, 'https://api.chapa.co/v1/banks');
+      assert.strictEqual(lastMethod, 'GET');
+      assert.strictEqual(lastRedirect, 'manual');
+      assert.strictEqual(res.attemptCount, 1);
+
+      res = await probe.executeOperation('currencies', null, { fetch: mockFetch });
+      assert.strictEqual(callCount, 2);
+      assert.strictEqual(lastUrl, 'https://api.chapa.co/v1/currency_supported');
+
+      res = await probe.executeOperation('verify-unknown', 'my-safe-ref', { fetch: mockFetch });
+      assert.strictEqual(callCount, 3);
+      assert.strictEqual(lastUrl, 'https://api.chapa.co/v1/transaction/verify/my-safe-ref');
+    });
+
+    test('E. REDIRECT: exactly one fetch call, manual redirect, no follow-up', async () => {
+      let callCount = 0;
+      let usedRedirect = '';
+      const mockFetch = async (url, options) => {
+        callCount++;
+        usedRedirect = options.redirect;
+        return {
+          arrayBuffer: async () => new ArrayBuffer(0),
+          headers: new Headers({ 'Location': 'https://api.chapa.co/somewhere' }),
+          status: 302
+        };
+      };
+
+      const probe = await import('../probe.mjs');
+      const res = await probe.executeOperation('banks', null, { fetch: mockFetch });
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(usedRedirect, 'manual');
+      assert.strictEqual(res.status, 302);
+    });
+
+    test('F. NO RETRY ON FAILURE', async () => {
+      let callCount = 0;
+      const mockFetch = async () => {
+        callCount++;
+        throw new Error('connection closed');
+      };
+
+      const probe = await import('../probe.mjs');
+      let err;
+      try {
+        await probe.executeOperation('banks', null, { fetch: mockFetch });
+      } catch (e) {
+        err = e;
+      }
+      assert.ok(err);
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(err.kind, 'transport');
+    });
+
+    test('G. HEADER SAFETY: name-only response-header discovery', async () => {
+      const mockFetch = async () => {
+        const headers = new Headers();
+        headers.set('content-type', 'application/json');
+        headers.set('x-request-id', 'SYNTHETIC-REQUEST-ID-VALUE');
+        headers.set('set-cookie', 'SUPER-SECRET-COOKIE');
+        return {
+          arrayBuffer: async () => new ArrayBuffer(0),
+          headers,
+          status: 200
+        };
+      };
+
+      const probe = await import('../probe.mjs');
+      const res = await probe.executeOperation('banks', null, { fetch: mockFetch });
+
+      assert.strictEqual(res.headers['content-type'], 'application/json');
+      assert.ok(res.unknownHeaderNames.includes('x-request-id'));
+      assert.ok(!res.unknownHeaderNames.includes('set-cookie'));
+
+      const serialized = JSON.stringify(res);
+      assert.ok(!serialized.includes('SUPER-SECRET-COOKIE'));
+      assert.ok(!serialized.includes('SYNTHETIC-REQUEST-ID-VALUE'));
+    });
+
+    test('H. SYNTHETIC AUTHORIZATION SAFETY', async () => {
+      let callCount = 0;
+      const mockFetch = async (url, options) => {
+        callCount++;
+        // Use case-insensitive header access since headers is passed in object
+        const headersObj = options.headers || {};
+        const auth = headersObj['Authorization'] || headersObj['authorization'];
+        assert.strictEqual(auth, 'Bearer synthetic-secret-123');
+        return {
+          arrayBuffer: async () => new ArrayBuffer(0),
+          headers: new Headers(),
+          status: 200
+        };
+      };
+
+      const probe = await import('../probe.mjs');
+      const res = await probe.executeOperation('banks', null, {
+        fetch: mockFetch,
+        headers: { 'Authorization': 'Bearer synthetic-secret-123' }
+      });
+
+      assert.strictEqual(callCount, 1);
+      const serialized = JSON.stringify(res);
+      assert.ok(!serialized.includes('synthetic-secret-123'));
+    });
+
+    test('I. UNAPPROVED REQUEST HEADERS REJECTED BEFORE FETCH', async () => {
+      let callCount = 0;
+      const mockFetch = async () => {
+        callCount++;
+        return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 200 };
+      };
+
+      const probe = await import('../probe.mjs');
+
+      // Test with plain object
+      await assert.rejects(
+        () => probe.executeOperation('banks', null, {
+          fetch: mockFetch,
+          headers: { 'Cookie': 'x=1' }
+        }),
+        /Provider guard: Unapproved request header/
+      );
+      assert.strictEqual(callCount, 0);
+
+      // Test with Headers instance
+      const headersInst1 = new Headers();
+      headersInst1.append('Host', 'evil.com');
+      await assert.rejects(
+        () => probe.executeOperation('banks', null, {
+          fetch: mockFetch,
+          headers: headersInst1
+        }),
+        /Provider guard: Unapproved request header/
+      );
+      assert.strictEqual(callCount, 0);
+
+      const headersInst2 = new Headers();
+      headersInst2.append('X-Arbitrary-Test', 'true');
+      await assert.rejects(
+        () => probe.executeOperation('banks', null, {
+          fetch: mockFetch,
+          headers: headersInst2
+        }),
+        /Provider guard: Unapproved request header/
+      );
+      assert.strictEqual(callCount, 0);
+
+      const headersInst3 = new Headers();
+      headersInst3.append('Authorization', 'Bearer 123');
+      headersInst3.append('Cookie', 'x=1');
+      await assert.rejects(
+        () => probe.executeOperation('banks', null, {
+          fetch: mockFetch,
+          headers: headersInst3
+        }),
+        /Provider guard: Unapproved request header/
+      );
+      assert.strictEqual(callCount, 0);
+    });
+
+    test('J. AUTHORIZATION ERROR-PATH SAFETY', async () => {
+      let callCount = 0;
+      const mockFetch = async () => {
+        callCount++;
+        throw new Error('Connection failed: SYNTHETIC_AUTH_SECRET_DO_NOT_LEAK');
+      };
+
+      const probe = await import('../probe.mjs');
+
+      let err;
+      try {
+        await probe.executeOperation('banks', null, {
+          fetch: mockFetch,
+          headers: { 'Authorization': 'Bearer SYNTHETIC_AUTH_SECRET_DO_NOT_LEAK' }
+        });
+      } catch (e) {
+        err = e;
+      }
+
+      assert.ok(err);
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(err.kind, 'transport');
+      assert.ok(!err.message.includes('SYNTHETIC_AUTH_SECRET_DO_NOT_LEAK'));
+
+      const serialized = JSON.stringify(err);
+      assert.ok(!serialized.includes('SYNTHETIC_AUTH_SECRET_DO_NOT_LEAK'));
     });
   });
 });
