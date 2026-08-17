@@ -33,49 +33,101 @@ export async function executeRequest(url, options = {}) {
     if (parsedUrl.hash !== '') {
       throw new Error('Provider guard: URL fragment is rejected');
     }
-    const method = options.method || 'GET';
-    if (method !== 'GET') {
-      throw new Error('Provider guard: Method must be exactly GET');
-    }
-    if ('body' in options && options.body !== undefined) {
-      throw new Error('Provider guard: GET requests must not carry a body');
-    }
     if (typeof options.fetch !== 'function') {
       throw new Error('Provider guard: injected fetch function is explicitly required');
-    }
-
-    // Do NOT infer that Authorization is required by any Chapa endpoint.
-    // This is only for synthetic local-test compatibility.
-    if (options.headers) {
-      let headerNames = [];
-      if (options.headers instanceof Headers) {
-        for (const [key] of options.headers.entries()) {
-          headerNames.push(key);
-        }
-      } else {
-        headerNames = Object.keys(options.headers);
-      }
-      for (const key of headerNames) {
-        if (key.toLowerCase() !== 'authorization') {
-          throw new Error(`Provider guard: Unapproved request header ${key}`);
-        }
-      }
     }
 
     const path = parsedUrl.pathname;
     const isBanks = path === '/v1/banks';
     const isCurrencies = path === '/v1/currency_supported';
     let isVerify = false;
+    let isInitialize = false;
 
     if (path.startsWith('/v1/transaction/verify/')) {
        const ref = path.substring('/v1/transaction/verify/'.length);
        if (ref.length > 0 && /^[A-Za-z0-9_-]+$/.test(ref)) {
           isVerify = true;
        }
+    } else if (path === '/v1/transaction/initialize') {
+       isInitialize = true;
     }
 
-    if (!isBanks && !isCurrencies && !isVerify) {
-       throw new Error('Provider guard: Pathname not in approved M0.5-B allowlist');
+    if (!isBanks && !isCurrencies && !isVerify && !isInitialize) {
+       throw new Error('Provider guard: Pathname not in approved M0.5 allowlist');
+    }
+
+    const method = options.method || 'GET';
+    if (isInitialize) {
+      if (method !== 'POST') {
+        throw new Error('Provider guard: Method must be exactly POST for initialize');
+      }
+      if (!('body' in options) || options.body === undefined || options.body === null) {
+        throw new Error('Provider guard: POST initialize requires a body');
+      }
+      if (typeof options.body !== 'string') {
+        throw new Error('Provider guard: POST initialize body must be a string');
+      }
+      let parsedBody;
+      try {
+        parsedBody = JSON.parse(options.body);
+      } catch (err) {
+        throw new Error('Provider guard: POST initialize body must parse as JSON');
+      }
+      if (typeof parsedBody !== 'object' || parsedBody === null || Array.isArray(parsedBody)) {
+        throw new Error('Provider guard: POST initialize body must be a JSON object');
+      }
+
+      let contentTypeFound = false;
+      if (options.headers) {
+        let headerEntries = [];
+        if (options.headers instanceof Headers) {
+          for (const [key, val] of options.headers.entries()) {
+            headerEntries.push([key, val]);
+          }
+        } else {
+          headerEntries = Object.entries(options.headers);
+        }
+        for (const [key, val] of headerEntries) {
+          const lowerKey = key.toLowerCase();
+          if (lowerKey !== 'authorization' && lowerKey !== 'content-type') {
+            throw new Error(`Provider guard: Unapproved request header ${key}`);
+          }
+          if (lowerKey === 'content-type') {
+            contentTypeFound = true;
+            if (val !== 'application/json') {
+              throw new Error('Provider guard: Content-Type must be exactly application/json for initialize');
+            }
+          }
+        }
+      }
+      if (!contentTypeFound) {
+        throw new Error('Provider guard: Content-Type is required for initialize');
+      }
+    } else {
+      if (method !== 'GET') {
+        throw new Error('Provider guard: Method must be exactly GET');
+      }
+      if ('body' in options && options.body !== undefined) {
+        throw new Error('Provider guard: GET requests must not carry a body');
+      }
+
+      // Do NOT infer that Authorization is required by any Chapa endpoint.
+      // This is only for synthetic local-test compatibility.
+      if (options.headers) {
+        let headerNames = [];
+        if (options.headers instanceof Headers) {
+          for (const [key] of options.headers.entries()) {
+            headerNames.push(key);
+          }
+        } else {
+          headerNames = Object.keys(options.headers);
+        }
+        for (const key of headerNames) {
+          if (key.toLowerCase() !== 'authorization') {
+            throw new Error(`Provider guard: Unapproved request header ${key}`);
+          }
+        }
+      }
     }
 
   } else {
