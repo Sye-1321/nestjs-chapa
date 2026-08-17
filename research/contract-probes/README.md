@@ -24,4 +24,23 @@ The `research/contract-probes` directory is a local-only testing and research en
 - `lib/capture.mjs`: Local raw byte and metadata storage.
 - `lib/sanitize.mjs`: Conservative evidence sanitization.
 - `probe.mjs`: CLI entrypoint and operation builder.
+- `session/m0.5-c-runner.mjs`: Interactive M0.5-C provider probe runner.
 - `test/harness.test.mjs`: Deterministic, local unit tests.
+- `test/runner.test.mjs`: Tests for the interactive session runner.
+
+## Interactive Runner (M0.5-C)
+
+To execute provider probes for M0.5-C, use the interactive session runner:
+
+```bash
+node research/contract-probes/session/m0.5-c-runner.mjs
+```
+
+**Important interactive runner constraints:**
+- TEST MODE confirmation is mandatory
+- every provider request needs its own AUTHORIZE
+- no batch execution exists
+- duplicate probe is globally one deliberate second attempt, guarded locally
+- POST initialize remains zero-retry
+- raw captures are local/untracked
+- evidence requires human review/adjudication
