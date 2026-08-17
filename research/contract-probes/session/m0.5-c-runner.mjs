@@ -57,6 +57,8 @@ export async function runInteractiveSession({
   stdin = process.stdin,
   stdout = process.stdout,
   fetchFunc = globalThis.fetch,
+  captureFunc = captureRaw,
+  duplicateGuardPath = path.join(fileURLToPath(import.meta.url), '../../.raw', 'm05c_duplicate_guard'),
   env = process.env
 } = {}) {
   const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -205,11 +207,10 @@ export async function runInteractiveSession({
       }
 
       if (scenario.id === 'DUPLICATE-INITIALIZATION') {
-        const rawDir = path.join(fileURLToPath(import.meta.url), '../../.raw');
-        const duplicateGuardPath = path.join(rawDir, 'm05c_duplicate_guard');
+        const guardDir = path.dirname(duplicateGuardPath);
         try {
-          if (!fs.existsSync(rawDir)) {
-            fs.mkdirSync(rawDir, { recursive: true });
+          if (!fs.existsSync(guardDir)) {
+            fs.mkdirSync(guardDir, { recursive: true });
           }
           fs.writeFileSync(duplicateGuardPath, '', { flag: 'wx' });
         } catch (e) {
@@ -235,7 +236,7 @@ export async function runInteractiveSession({
       try {
         const result = await executeOperation(scenario.type, payloadOrRef, fetchOptions);
 
-        await captureRaw(result, null, { idFactory: () => `${scenario.id.toLowerCase()}-${txRefStr}` });
+        await captureFunc(result, null, { idFactory: () => `${scenario.id.toLowerCase()}-${txRefStr}` });
         print(`Raw evidence captured safely to local boundary.`);
 
         print('\n--- SANITIZED SUMMARY ---');
