@@ -1,0 +1,41 @@
+{
+  "operation": "B2",
+  "evidenceState": "V",
+  "environment": "test",
+  "observed": {
+    "url": "https://api.chapa.co/v1/currency_supported",
+    "method": "GET",
+    "status": 200,
+    "contentType": "application/json",
+    "attemptCount": 1
+  },
+  "responseHeaderNames": [
+    "cache-control",
+    "connection",
+    "content-length",
+    "date",
+    "vary",
+    "via",
+    "x-amz-apigw-id",
+    "x-amz-cf-id",
+    "x-amz-cf-pop",
+    "x-amzn-remapped-date",
+    "x-amzn-requestid",
+    "x-amzn-trace-id",
+    "x-cache",
+    "x-ratelimit-limit",
+    "x-ratelimit-remaining"
+  ],
+  "data": {
+    "status": "success",
+    "currency_code": [
+      1,
+      2
+    ],
+    "currency_name": [
+      "ETB",
+      "USD"
+    ]
+  },
+  "humanReviewed": true
+}
