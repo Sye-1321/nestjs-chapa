@@ -1076,4 +1076,297 @@ describe('M0.5-A Harness Tests', () => {
       assert.ok(!serialized.includes('SYNTHETIC_AUTH_SECRET_DO_NOT_LEAK'));
     });
   });
+
+  describe('K. M0.5-C INITIALIZE PROVIDER BOUNDARY', () => {
+    test('1. importing/building initialize preparation performs zero network calls', async () => {
+      let callCount = 0;
+      const mockFetch = async () => { callCount++; };
+      const origFetch = globalThis.fetch;
+      globalThis.fetch = mockFetch;
+      try {
+        const probe = await import('../probe.mjs');
+        assert.strictEqual(probe.buildInitializeUrl(), 'https://api.chapa.co/v1/transaction/initialize');
+        assert.strictEqual(callCount, 0);
+      } finally {
+        globalThis.fetch = origFetch;
+      }
+    });
+
+    test('2, 3. provider mode and injected fetch remain explicit and mandatory for initialize', async () => {
+      const { executeRequest } = await import('../lib/request.mjs');
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'POST', body: '{}', headers: {'content-type': 'application/json'} }),
+        /Network guard: Only loopback/
+      );
+      await assert.rejects(
+        () => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'POST', body: '{}', headers: {'content-type': 'application/json'}, providerMode: true }),
+        /Provider guard: injected fetch function is explicitly required/
+      );
+    });
+
+    test('4, 24, 25, 30, 31, 32. valid exact initialize accepted, fetches exactly once, method POST, manual redirect, unmodified body', async () => {
+      const probe = await import('../probe.mjs');
+      let fetchArgs = null;
+      let callCount = 0;
+      const mockFetch = async (url, options) => {
+        callCount++;
+        fetchArgs = { url: url.toString(), options };
+        return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 200 };
+      };
+
+      const payload = { amount: "10", currency: "ETB", tx_ref: "test-ref-123" };
+      await probe.executeOperation('initialize', payload, {
+        fetch: mockFetch,
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(fetchArgs.url, 'https://api.chapa.co/v1/transaction/initialize');
+      assert.strictEqual(fetchArgs.options.method, 'POST');
+      assert.strictEqual(fetchArgs.options.redirect, 'manual');
+      assert.strictEqual(fetchArgs.options.body, JSON.stringify(payload));
+    });
+
+    test('5, 6, 7. POST rejected on banks, currencies, verification', async () => {
+      const mockFetch = async () => {};
+      const { executeRequest } = await import('../lib/request.mjs');
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/banks', { method: 'POST', providerMode: true, fetch: mockFetch }), /Method must be exactly GET/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/currency_supported', { method: 'POST', providerMode: true, fetch: mockFetch }), /Method must be exactly GET/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/verify/abc', { method: 'POST', providerMode: true, fetch: mockFetch }), /Method must be exactly GET/);
+    });
+
+    test('8. GET rejected on initialize', async () => {
+      const mockFetch = async () => {};
+      const { executeRequest } = await import('../lib/request.mjs');
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'GET', providerMode: true, fetch: mockFetch }), /Method must be exactly POST for initialize/);
+    });
+
+    test('9, 10, 11. PUT, PATCH, DELETE rejected before fetch', async () => {
+      const mockFetch = async () => { throw new Error('fetch called'); };
+      const { executeRequest } = await import('../lib/request.mjs');
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'PUT', providerMode: true, fetch: mockFetch }), /Method must be exactly POST/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'PATCH', providerMode: true, fetch: mockFetch }), /Method must be exactly POST/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'DELETE', providerMode: true, fetch: mockFetch }), /Method must be exactly POST/);
+    });
+
+    test('12, 13, 14, 15, 16, 17. wrong protocol, host, origin, port, userinfo, query, fragment rejected', async () => {
+      const mockFetch = async () => { throw new Error('fetch called'); };
+      const { executeRequest } = await import('../lib/request.mjs');
+      const opts = { method: 'POST', body: '{}', headers: {'content-type': 'application/json'}, providerMode: true, fetch: mockFetch };
+
+      await assert.rejects(() => executeRequest('http://api.chapa.co/v1/transaction/initialize', opts), /Protocol must be https:/);
+      await assert.rejects(() => executeRequest('https://chapa.co/v1/transaction/initialize', opts), /Hostname must be api.chapa.co/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co:8443/v1/transaction/initialize', opts), /Origin must be exactly https:\/\/api\.chapa\.co|Standard HTTPS port only/);
+      await assert.rejects(() => executeRequest('https://user:pass@api.chapa.co/v1/transaction/initialize', opts), /userinfo is rejected/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize?a=1', opts), /query is rejected/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize#frag', opts), /fragment is rejected/);
+    });
+
+    test('18, 19. body missing or non-string rejected', async () => {
+      const mockFetch = async () => { throw new Error('fetch called'); };
+      const { executeRequest } = await import('../lib/request.mjs');
+
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'POST', headers: {'content-type': 'application/json'}, providerMode: true, fetch: mockFetch }), /POST initialize requires a body/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { method: 'POST', headers: {'content-type': 'application/json'}, body: 123, providerMode: true, fetch: mockFetch }), /POST initialize body must be a string/);
+    });
+
+    test('20, 21, 22, 23. invalid JSON, array, null, primitive rejected', async () => {
+      const mockFetch = async () => { throw new Error('fetch called'); };
+      const { executeRequest } = await import('../lib/request.mjs');
+      const baseOpts = { method: 'POST', providerMode: true, fetch: mockFetch, headers: {'content-type': 'application/json'} };
+
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts, body: 'not json' }), /must parse as JSON/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts, body: '[]' }), /must be a JSON object/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts, body: 'null' }), /must be a JSON object/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts, body: '"string"' }), /must be a JSON object/);
+    });
+
+    test('26, 27. Content-Type missing or wrong rejected', async () => {
+      const mockFetch = async () => { throw new Error('fetch called'); };
+      const { executeRequest } = await import('../lib/request.mjs');
+      const baseOpts = { method: 'POST', body: '{}', providerMode: true, fetch: mockFetch };
+
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts }), /Content-Type is required/);
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts, headers: {'content-type': 'text/plain'} }), /Content-Type must be exactly application\/json/);
+    });
+
+    test('28, 29. arbitrary headers rejected, checks are case-insensitive', async () => {
+      const mockFetch = async () => { return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 200 }; };
+      const { executeRequest } = await import('../lib/request.mjs');
+      const baseOpts = { method: 'POST', body: '{}', providerMode: true, fetch: mockFetch };
+
+      await assert.rejects(() => executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts, headers: {'content-type': 'application/json', 'x-custom': 'val'} }), /Unapproved request header/);
+
+      // Case insensitive check passes
+      await executeRequest('https://api.chapa.co/v1/transaction/initialize', { ...baseOpts, headers: {'CoNtEnT-tYpE': 'application/json', 'AuThOrIzAtIoN': 'Bearer test'} });
+      assert.ok(true);
+    });
+
+    test('33, 34. fake HTTP 400 and 500 cause no retry', async () => {
+      let callCount = 0;
+      const mockFetch = async () => {
+        callCount++;
+        return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 400 };
+      };
+      const probe = await import('../probe.mjs');
+
+      const res = await probe.executeOperation('initialize', {}, { fetch: mockFetch, headers: {'content-type': 'application/json'} });
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(res.status, 400);
+
+      callCount = 0;
+      const mockFetch500 = async () => {
+        callCount++;
+        return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 500 };
+      };
+      const res500 = await probe.executeOperation('initialize', {}, { fetch: mockFetch500, headers: {'content-type': 'application/json'} });
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(res500.status, 500);
+    });
+
+    test('FIX 1: undefined, null, string, number, array payloads rejected locally before fetch', async () => {
+      const probe = await import('../probe.mjs');
+      let fetchCalled = 0;
+      const mockFetch = async () => { fetchCalled++; };
+      const opts = { fetch: mockFetch, headers: {'content-type': 'application/json'} };
+
+      await assert.rejects(() => probe.executeOperation('initialize', undefined, opts), /Local guard: initialize payload must be a non-null JSON object/);
+      await assert.rejects(() => probe.executeOperation('initialize', null, opts), /Local guard: initialize payload must be a non-null JSON object/);
+      await assert.rejects(() => probe.executeOperation('initialize', 'string', opts), /Local guard: initialize payload must be a non-null JSON object/);
+      await assert.rejects(() => probe.executeOperation('initialize', 123, opts), /Local guard: initialize payload must be a non-null JSON object/);
+      await assert.rejects(() => probe.executeOperation('initialize', [], opts), /Local guard: initialize payload must be a non-null JSON object/);
+      assert.strictEqual(fetchCalled, 0);
+    });
+
+    test('FIX 2: real local timer timeout path', async () => {
+      const probe = await import('../probe.mjs');
+      let callCount = 0;
+      const mockFetchTimeout = async (url, options) => {
+        callCount++;
+        return new Promise((resolve, reject) => {
+          options.signal.addEventListener('abort', () => {
+            reject(new Error('abort'));
+          });
+        });
+      };
+
+      let err;
+      try {
+        await probe.executeOperation('initialize', { tx_ref: 'timeout-ref', secret: 'DO_NOT_LEAK' }, { fetch: mockFetchTimeout, headers: {'content-type': 'application/json'}, timeout: 10 });
+      } catch(e) { err = e; }
+
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(err.kind, 'timeout');
+      assert.strictEqual(err.attemptCount, 1);
+      assert.strictEqual(err.txRef, 'timeout-ref');
+      const errStr = JSON.stringify(err, Object.getOwnPropertyNames(err));
+      assert.ok(!errStr.includes('DO_NOT_LEAK'));
+    });
+
+    test('FIX 3: transport error path separately', async () => {
+      const probe = await import('../probe.mjs');
+      let callCount = 0;
+      const mockFetchTransport = async (url, options) => {
+        callCount++;
+        throw new Error('synthetic transport failure');
+      };
+
+      let err;
+      try {
+        await probe.executeOperation('initialize', { tx_ref: 'transport-ref', secret: 'DO_NOT_LEAK_2' }, { fetch: mockFetchTransport, headers: {'content-type': 'application/json'} });
+      } catch(e) { err = e; }
+
+      assert.strictEqual(callCount, 1);
+      assert.strictEqual(err.kind, 'transport');
+      assert.strictEqual(err.attemptCount, 1);
+      assert.strictEqual(err.txRef, 'transport-ref');
+      const errStr = JSON.stringify(err, Object.getOwnPropertyNames(err));
+      assert.ok(!errStr.includes('DO_NOT_LEAK_2'));
+    });
+
+    test('FIX 4: no automatic verify after uncertainty', async () => {
+      const probe = await import('../probe.mjs');
+      const invocations = [];
+      const mockFetch = async (url, options) => {
+        invocations.push({ url: url.toString(), method: options.method });
+        throw new Error('transport');
+      };
+      try {
+        await probe.executeOperation('initialize', { tx_ref: 'abc' }, { fetch: mockFetch, headers: {'content-type': 'application/json'} });
+      } catch(e) {}
+
+      assert.strictEqual(invocations.length, 1);
+      assert.strictEqual(invocations[0].url, 'https://api.chapa.co/v1/transaction/initialize');
+      assert.strictEqual(invocations[0].method, 'POST');
+    });
+
+    test('FIX 5: exact original JSON string forwarding', async () => {
+      const { executeRequest } = await import('../lib/request.mjs');
+      let capturedBody = null;
+      const mockFetch = async (url, options) => {
+        capturedBody = options.body;
+        return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 200 };
+      };
+      const exactString = '{ "amount" : "10", "currency" : "ETB" }';
+      await executeRequest('https://api.chapa.co/v1/transaction/initialize', {
+        method: 'POST',
+        body: exactString,
+        headers: {'content-type': 'application/json'},
+        providerMode: true,
+        fetch: mockFetch
+      });
+      assert.strictEqual(capturedBody, exactString);
+    });
+
+    test('FIX 6: success result leakage', async () => {
+      const probe = await import('../probe.mjs');
+      const mockFetch = async (url, options) => {
+        return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 200 };
+      };
+      const result = await probe.executeOperation('initialize', { sentinel: 'SECRET_BODY_SENTINEL' }, {
+        fetch: mockFetch,
+        headers: { 'content-type': 'application/json', 'authorization': 'Bearer SECRET_AUTH_SENTINEL' }
+      });
+      const resultStr = JSON.stringify(result);
+      assert.ok(!resultStr.includes('SECRET_BODY_SENTINEL'));
+      assert.ok(!resultStr.includes('SECRET_AUTH_SENTINEL'));
+    });
+
+    test('39, 40. synthetic auth and body values do not leak in errors', async () => {
+      const mockFetch = async () => { throw new Error('transport'); };
+      const probe = await import('../probe.mjs');
+
+      let err;
+      try {
+        await probe.executeOperation('initialize', { secret_payload: 'DO_NOT_LEAK' }, { fetch: mockFetch, headers: {'content-type': 'application/json', 'authorization': 'Bearer DO_NOT_LEAK_AUTH'} });
+      } catch(e) { err = e; }
+
+      const errStr = JSON.stringify(err, Object.getOwnPropertyNames(err));
+      assert.ok(!errStr.includes('DO_NOT_LEAK'));
+    });
+
+    test('41, 42. initialize uncertainty preserves synthetic tx_ref without preserving whole body', async () => {
+      const mockFetch = async () => { throw new Error('transport'); };
+      const probe = await import('../probe.mjs');
+
+      let err;
+      try {
+        await probe.executeOperation('initialize', { tx_ref: 'preserve-this', secret: 'hide-this' }, { fetch: mockFetch, headers: {'content-type': 'application/json'} });
+      } catch(e) { err = e; }
+
+      assert.strictEqual(err.txRef, 'preserve-this');
+      const errStr = JSON.stringify(err, Object.getOwnPropertyNames(err));
+      assert.ok(!errStr.includes('hide-this'));
+    });
+
+    test('43, 44, 45, 46. existing operations still work', async () => {
+      const mockFetch = async () => { return { arrayBuffer: async () => new ArrayBuffer(0), headers: new Headers(), status: 200 }; };
+      const probe = await import('../probe.mjs');
+
+      await probe.executeOperation('banks', null, { fetch: mockFetch });
+      await probe.executeOperation('currencies', null, { fetch: mockFetch });
+      await probe.executeOperation('verify-unknown', 'test-ref', { fetch: mockFetch });
+      assert.ok(true);
+    });
+  });
 });
