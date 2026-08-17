@@ -1,0 +1,41 @@
+{
+  "operation": "B3",
+  "evidenceState": "V",
+  "environment": "test",
+  "claimScope": "Exact synthetic-reference rejection only. This evidence does not establish valid-format unknown/not-found behavior or unpaid/pending behavior.",
+  "syntheticReference": "m05b_unknown_20260817_7f4c91a2e6bd43d8",
+  "observed": {
+    "url": "https://api.chapa.co/v1/transaction/verify/m05b_unknown_20260817_7f4c91a2e6bd43d8",
+    "method": "GET",
+    "status": 400,
+    "contentType": "application/json",
+    "attemptCount": 1
+  },
+  "responseHeaderNames": [
+    "cache-control",
+    "connection",
+    "content-length",
+    "date",
+    "vary",
+    "via",
+    "x-amz-apigw-id",
+    "x-amz-cf-id",
+    "x-amz-cf-pop",
+    "x-amzn-remapped-date",
+    "x-amzn-requestid",
+    "x-amzn-trace-id",
+    "x-cache",
+    "x-ratelimit-limit",
+    "x-ratelimit-remaining"
+  ],
+  "data": {
+    "message": "Invalid transaction reference",
+    "status": "failed",
+    "data": null
+  },
+  "unresolved": {
+    "validFormatUnknownReferenceDiscriminator": "U",
+    "unpaidPendingDiscriminator": "U"
+  },
+  "humanReviewed": true
+}
