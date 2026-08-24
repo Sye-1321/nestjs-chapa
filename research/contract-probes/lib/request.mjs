@@ -42,6 +42,7 @@ export async function executeRequest(url, options = {}) {
     const isCurrencies = path === '/v1/currency_supported';
     let isVerify = false;
     let isInitialize = false;
+    let isCancel = false;
 
     if (path.startsWith('/v1/transaction/verify/')) {
        const ref = path.substring('/v1/transaction/verify/'.length);
@@ -50,9 +51,14 @@ export async function executeRequest(url, options = {}) {
        }
     } else if (path === '/v1/transaction/initialize') {
        isInitialize = true;
+    } else if (path.startsWith('/v1/transaction/cancel/')) {
+       const ref = path.substring('/v1/transaction/cancel/'.length);
+       if (ref.length > 0 && /^[A-Za-z0-9_-]+$/.test(ref)) {
+          isCancel = true;
+       }
     }
 
-    if (!isBanks && !isCurrencies && !isVerify && !isInitialize) {
+    if (!isBanks && !isCurrencies && !isVerify && !isInitialize && !isCancel) {
        throw new Error('Provider guard: Pathname not in approved M0.5 allowlist');
     }
 
@@ -102,6 +108,24 @@ export async function executeRequest(url, options = {}) {
       }
       if (!contentTypeFound) {
         throw new Error('Provider guard: Content-Type is required for initialize');
+      }
+    } else if (isCancel) {
+      if (method !== 'PUT') {
+        throw new Error('Provider guard: Method must be exactly PUT for cancellation');
+      }
+      if ('body' in options) {
+        throw new Error('Provider guard: PUT cancellation must not carry a body');
+      }
+
+      if (options.headers) {
+        const headerNames = options.headers instanceof Headers
+          ? [...options.headers.keys()]
+          : Object.keys(options.headers);
+        for (const key of headerNames) {
+          if (key.toLowerCase() !== 'authorization') {
+            throw new Error(`Provider guard: Unapproved request header ${key}`);
+          }
+        }
       }
     } else {
       if (method !== 'GET') {

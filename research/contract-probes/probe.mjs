@@ -24,6 +24,14 @@ export function buildInitializeUrl() {
   return 'https://api.chapa.co/v1/transaction/initialize';
 }
 
+export function buildCancelUrl(reference) {
+  if (typeof reference !== 'string' || !/^[A-Za-z0-9_-]+$/.test(reference)) {
+    throw new Error('Invalid reference: fails local harness safety grammar');
+  }
+
+  return `https://api.chapa.co/v1/transaction/cancel/${reference}`;
+}
+
 export async function executeOperation(operation, payloadOrReference, options = {}) {
   if (typeof options.fetch !== 'function') {
     throw new Error('Provider execution blocked: no injected fetch function');
@@ -54,6 +62,10 @@ export async function executeOperation(operation, payloadOrReference, options = 
     if (typeof payloadOrReference.tx_ref === 'string') {
       txRef = payloadOrReference.tx_ref;
     }
+  } else if (operation === 'cancel') {
+    url = buildCancelUrl(payloadOrReference);
+    method = 'PUT';
+    txRef = payloadOrReference;
   } else {
     throw new Error('Unknown operation');
   }
@@ -61,15 +73,16 @@ export async function executeOperation(operation, payloadOrReference, options = 
   const { executeRequest } = await import('./lib/request.mjs');
 
   try {
-    return await executeRequest(url, {
+    const requestOptions = {
       ...options,
       method,
-      body,
       providerMode: true,
       fetch: options.fetch
-    });
+    };
+    if (body !== undefined) requestOptions.body = body;
+    return await executeRequest(url, requestOptions);
   } catch (err) {
-    if (operation === 'initialize' && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
+    if ((operation === 'initialize' || operation === 'cancel') && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
       err.txRef = txRef;
     }
     throw err;
