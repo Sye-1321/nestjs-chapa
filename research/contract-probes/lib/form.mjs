@@ -6,17 +6,26 @@ function encodeScalar(value, label) {
 }
 
 export function encodeForm(entries) {
-  const pairs = entries instanceof Map
-    ? [...entries.entries()]
-    : Object.entries(entries ?? {});
+  const isMap = entries instanceof Map;
+  const prototype = entries !== null && typeof entries === 'object'
+    ? Object.getPrototypeOf(entries)
+    : undefined;
+  const isPlainObject = prototype === Object.prototype || prototype === null;
 
-  if (entries === null || typeof entries !== 'object' || Array.isArray(entries)) {
+  if (!isMap && !isPlainObject) {
     throw new TypeError('Form encoder: input must be a plain object or Map');
   }
 
-  return pairs
-    .map(([key, value]) => [encodeScalar(key, 'key'), encodeScalar(value, `value for ${key}`)])
-    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-    .join('&');
+  const normalized = (isMap ? [...entries.entries()] : Object.entries(entries))
+    .map(([key, value]) => {
+      if (typeof key !== 'string') {
+        throw new TypeError('Form encoder: key must be a string');
+      }
+      return [key, encodeScalar(value, `value for ${key}`)];
+    })
+    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+
+  const params = new URLSearchParams();
+  for (const [key, value] of normalized) params.append(key, value);
+  return params.toString();
 }

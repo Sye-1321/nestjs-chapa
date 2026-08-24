@@ -123,18 +123,35 @@ describe('M0.5-D D2 cancellation boundary', () => {
 
 describe('M0.5-D D2 deterministic form foundation', () => {
   test('encodes supported scalars deterministically', () => {
-    assert.equal(encodeForm({ z: true, amount: 10, reason: 'test only' }), 'amount=10&reason=test%20only&z=true');
-    assert.equal(encodeForm({ reason: 'test only', amount: 10, z: true }), 'amount=10&reason=test%20only&z=true');
+    assert.equal(encodeForm({ z: true, amount: 10, reason: 'test only' }), 'amount=10&reason=test+only&z=true');
+    assert.equal(encodeForm({ reason: 'test only', amount: 10, z: true }), 'amount=10&reason=test+only&z=true');
+    assert.equal(encodeForm(new Map([['z', false], ['a', 1]])), 'a=1&z=false');
   });
 
-  test('percent-encodes keys and values', () => {
-    assert.equal(encodeForm({ 'meta[key]': 'a+b & c/ይ' }), 'meta%5Bkey%5D=a%2Bb%20%26%20c%2F%E1%8B%AD');
+  test('uses canonical form encoding for spaces, plus, unicode, and bracketed keys', () => {
+    assert.equal(encodeForm({ 'meta[key]': 'a+b & c/ይ' }), 'meta%5Bkey%5D=a%2Bb+%26+c%2F%E1%8B%AD');
   });
 
-  test('rejects unsupported values and performs no network activity', () => {
+  test('rejects null, undefined, arrays, nested objects, and non-finite numbers', () => {
+    assert.throws(() => encodeForm({ value: null }), /must be a string, finite number, or boolean/);
+    assert.throws(() => encodeForm({ value: undefined }), /must be a string, finite number, or boolean/);
     assert.throws(() => encodeForm({ meta: { nested: true } }), /must be a string, finite number, or boolean/);
     assert.throws(() => encodeForm({ items: ['a'] }), /must be a string, finite number, or boolean/);
-    assert.equal(encodeForm(new Map([['b', '2'], ['a', '1']])), 'a=1&b=2');
-    assert.equal(encodeForm.constructor.name, 'Function');
+    assert.throws(() => encodeForm({ value: Infinity }), /must be a string, finite number, or boolean/);
+    assert.throws(() => encodeForm({ value: NaN }), /must be a string, finite number, or boolean/);
+  });
+
+  test('accepts only a plain object or Map', () => {
+    class FormInput { constructor() { this.value = 'x'; } }
+    assert.throws(() => encodeForm(null), /plain object or Map/);
+    assert.throws(() => encodeForm(undefined), /plain object or Map/);
+    assert.throws(() => encodeForm([]), /plain object or Map/);
+    assert.throws(() => encodeForm(new Date()), /plain object or Map/);
+    assert.throws(() => encodeForm(new FormInput()), /plain object or Map/);
+    assert.throws(() => encodeForm(new Map([[1, 'value']])), /key must be a string/);
+
+    const nullPrototype = Object.create(null);
+    nullPrototype.value = 'accepted';
+    assert.equal(encodeForm(nullPrototype), 'value=accepted');
   });
 });
