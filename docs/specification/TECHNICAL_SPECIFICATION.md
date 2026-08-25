@@ -3,12 +3,12 @@
 ## Full Technical Specification & Implementation Contract
 
 **Version:** 1.0 - M0.5 Contract-Freeze Baseline
-**Status:** APPROVED M0.5 CONTRACT FREEZE — F7 CLOSEOUT REQUIRED BEFORE M1
+**Status:** APPROVED M0.5 CONTRACT FREEZE — F7 COMPLETE; MERGE REQUIRED BEFORE M1
 **Project owner & maintainer:** Sye (GitHub: `Sye-1321`)  
 **Repository:** `Sye-1321/nestjs-chapa`  
 **npm package:** `@sye1321/nestjs-chapa`  
 **Date:** 25 August 2026
-**Execution gate:** F7 M0.5 closeout; M1 is not yet authorized
+**Execution gate:** Merge and post-merge verification of the coherent M0.5-F PR; M1 is not yet authorized
 
 A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment Platform. Designed with framework-independent core architecture, evidence-driven contract boundaries, and zero implicit network retries.
 
@@ -20,10 +20,10 @@ A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment P
 |---|---|
 | Document title | NestJS Chapa - Technical Specification |
 | Version | 1.0 |
-| Status | APPROVED M0.5 CONTRACT FREEZE — F7 CLOSEOUT REQUIRED BEFORE M1 |
+| Status | APPROVED M0.5 CONTRACT FREEZE — F7 COMPLETE; MERGE REQUIRED BEFORE M1 |
 | Primary owner | Sye (GitHub: `Sye-1321`) |
 | Implementation target | Repository `Sye-1321/nestjs-chapa` and npm package `@sye1321/nestjs-chapa` |
-| Approval gate | F6 applies the approved contract freeze. F7 must close M0.5 before M1 production implementation is authorized. |
+| Approval gate | Merge and post-merge verification of the coherent M0.5-F PR are required before M1 production implementation may be separately authorized. |
 | Source-of-truth order | Official Chapa documentation; maintainer-adjudicated sanitized Test Mode evidence; official NestJS, Node.js, and npm documentation. |
 | Last updated | 25 August 2026 |
 
@@ -1004,7 +1004,7 @@ interface ChapaInstrumentationHooks {
 
 ## 16.1 M0.5 Chapa Contract-Verification Gate
 
-**[REQ-TEST-01]** M0.5 used disposable research tooling rather than production package code to observe Chapa. Its final evidence states and deferrals are recorded in `docs/contracts/2026-08-25-m0.5-contract-freeze-proposal.md`; F7 closeout remains required before M1 authorization.
+**[REQ-TEST-01]** M0.5 used disposable research tooling rather than production package code to observe Chapa. Its final evidence states and deferrals are recorded in `docs/contracts/2026-08-25-m0.5-contract-freeze-proposal.md`; F7 closeout is complete, while M1 authorization remains pending M0.5-F PR merge and post-merge verification.
 
 | Operation or scenario | Frozen M0.5 outcome | Version-1 consequence |
 |---|---|---|
@@ -1022,7 +1022,7 @@ interface ChapaInstrumentationHooks {
 
 The Appendix F fixture manifest contains the three actual M0.5-B JSON fixtures. Adjudicated C/D/E sanitized observations are indexed in the approved contract-freeze matrix rather than misrepresented as fixtures.
 
-**[REQ-TEST-03]** M0.5 closes only through F7 after every shipped safety-critical contract has sufficient D/V authority or is explicitly constrained, deferred, excluded, or fail-closed. Refunds are excluded rather than treated as a missing version-1 fixture. Production package work remains unauthorized until F7 records final alignment and explicit M1 authorization.
+**[REQ-TEST-03]** M0.5 closes only through F7 after every shipped safety-critical contract has sufficient D/V authority or is explicitly constrained, deferred, excluded, or fail-closed. Refunds are excluded rather than treated as a missing version-1 fixture. F7 recorded final alignment; production package work remains unauthorized until the coherent M0.5-F PR is merged, the merged `main` state is verified, and M1 is separately authorized.
 
 ## 16.2 Test Layers
 
@@ -1214,7 +1214,7 @@ nestjs-chapa/
 | Milestone | Deliverable | Exit condition |
 |---|---|---|
 | M0 - Specification | Approved architecture, public boundary, preliminary endpoint matrix, open-question register. | Repository and M0.5 research may proceed. |
-| M0.5 - Contract verification | Completed A-F evidence inventory, adjudication, fixture manifest, contract matrix, and normative freeze. | F7 verifies final alignment, records raw-evidence disposition, closes M0.5, and explicitly decides M1 authorization. |
+| M0.5 - Contract verification | Completed A-F evidence inventory, adjudication, fixture manifest, contract matrix, and normative freeze. | F7 final alignment and raw-evidence disposition are complete; merge and post-merge verification gate M1 authorization. |
 | M1 - Repository foundation | Governance files, package skeleton, CI, build proof, release preview, and contributor workflow. | Packed empty library installs in ESM/CJS Nest consumers; governance and package identity are confirmed. |
 | M2 - Core infrastructure | Configuration, one-attempt transport, request executor, errors, validation, logging, safe-read retry engine. | Failure-mode and public-boundary tests pass. |
 | M3 - Payments | Initialize, verify, cancel, references. | Evidence-backed contract tests and documented recovery flows pass against the frozen D/V/U contract. |
@@ -1426,7 +1426,7 @@ Fixture review requires two checks: no secret or personal data remains, and the 
 | Core boundary | Framework-independent internally; not a separate public Node.js SDK in version 1. |
 | Provider evidence | F5 final matrix: 21 V, 9 U, 0 candidate-V; F6 normative changes applied. |
 | Version-1 scope | Hosted initialize, verify, bodyless hosted-checkout cancellation, banks, supported currencies, transaction references, and webhook verification; provider refunds excluded. |
-| M1 readiness | READY WITH EXCLUSIONS target; not effective until F7 closeout and explicit authorization. |
+| M1 readiness | READY WITH EXCLUSIONS; M1 authorization remains pending M0.5-F PR merge and post-merge verification. |
 | Retries | Safe reads only; no automatic retry for initialization, cancellation, or future side-effect operations. |
 | Webhooks | Required X1 over exact raw bytes; optional supplied C1 validates as secondary consistency only; unknown events preserved. |
 | Validation | SDK-owned public contracts with internal Zod; tolerant required-field response parsing. |
@@ -1434,4 +1434,4 @@ Fixture review requires two checks: no secret or personal data remains, and the 
 
 > **Implementation Gate**
 >
-> F6 has applied the F5-approved normative changes. **M1 is not yet authorized.** F7 must verify specification/evidence alignment, close M0.5, record the raw-evidence retention/deletion decision, prepare and review the coherent M0.5-F PR, and explicitly authorize M1.
+> F7 verified specification/evidence alignment and closed the branch-level M0.5-F review. **M1 is not yet authorized.** The coherent M0.5-F PR must be merged and the merged `main` state verified without discrepancy before M1 becomes eligible for separate explicit authorization.
