@@ -107,7 +107,7 @@ This document is the implementation contract for `Sye-1321/nestjs-chapa`. It fix
 4. Make network uncertainty explicit and prevent duplicate side effects caused by generic retries.
 5. Provide secure, platform-aware webhook utilities for both Express and Fastify Nest applications.
 6. Publish a trustworthy open-source npm package with reproducible CI, provenance, release notes, and a support policy.
-7. Classify every Chapa-dependent contract as documented, sandbox-verified, or unresolved before freezing public types.
+7. Classify every Chapa-dependent contract as documented, Test Mode verified, or unresolved before freezing public types.
 
 ## 2.3 Non-goals
 
@@ -135,13 +135,13 @@ Every Chapa-dependent contract carries one of the following evidence states. Arc
 | Code | State | Meaning and release rule |
 |---|---|---|
 | `A` | Accepted architecture decision | Internal design decision. It is normative for implementation but does not claim Chapa behaviour. |
-| `D` | Documented, not fixture-verified | Supported by current official documentation. The method/path may be implemented, but ambiguous shapes remain tolerant and provisional. |
+| `D` | Documented | Supported by current official documentation. The method/path may be implemented, but ambiguous shapes remain tolerant and provisional. |
 | `V` | Test Mode verified | Confirmed either by a human-reviewed sanitized Test Mode fixture or by a human-reviewed sanitized provider observation with explicit maintainer adjudication. Synthetic/local tests and plans alone cannot create V. V is narrow to its recorded scenario and does not imply live-mode parity. |
 | `U` | Unresolved or provisional | Insufficient evidence. The operation or field is deferred, gated, or exposed only as raw data until resolved. |
 
 ### Requirement Notation
 
-`REQ-*` identifiers are stable references for code, tests, pull requests, and release evidence. **MUST** marks a release-blocking requirement; **SHOULD** requires a documented exception; **MAY** is optional. Evidence tags use `A` (architecture), `D` (documented), `V` (sandbox-verified), and `U` (unresolved).
+`REQ-*` identifiers are stable references for code, tests, pull requests, and release evidence. **MUST** marks a release-blocking requirement; **SHOULD** requires a documented exception; **MAY** is optional. Evidence tags use `A` (architecture), `D` (documented), `V` (Test Mode verified), and `U` (unresolved).
 
 > **Public Contract Freeze Rule**
 >
@@ -417,13 +417,13 @@ interface InitializePaymentResult {
   status: string;
   message?: string;
   checkoutUrl: string;
-  transactionReference: string;
+  txRef: string;
   response: ChapaResponseMetadata;
   raw: unknown;
 }
 ```
 
-The checkout URL is mandatory for a successful normalized result. If the HTTP response is successful but the URL is missing or unusable, the SDK throws `ChapaResponseError` and preserves the raw body.
+The checkout URL is mandatory for a successful normalized result. `txRef` is the exact merchant reference supplied to initialize and is an SDK-owned echo of that request identity; it is not a newly inferred provider-generated Chapa reference. If the HTTP response is successful but the URL is missing or unusable, the SDK throws `ChapaResponseError` and preserves the raw body.
 
 ### 8.3.3 `VerifyPaymentResult`
 
@@ -440,7 +440,6 @@ type PaymentStatus =
 interface VerifyPaymentResult {
   status: PaymentStatus;
   txRef: string;
-  chapaReference?: string;
   amount?: string;
   charge?: string;
   currency?: string;
@@ -531,7 +530,6 @@ interface VerifyWebhookInput {
 interface ChapaWebhookEventBase {
   event: string;
   txRef?: string;
-  chapaReference?: string;
   status?: string;
   amount?: string;
   currency?: string;
@@ -541,6 +539,10 @@ interface ChapaWebhookEventBase {
 interface ChapaChargeSuccessWebhookEvent extends ChapaWebhookEventBase {
   event: 'charge.success';
   status: 'success';
+}
+
+interface ChapaUnknownWebhookEvent extends ChapaWebhookEventBase {
+  event: string;
 }
 
 type ChapaKnownWebhookEvent = ChapaChargeSuccessWebhookEvent;
@@ -560,6 +562,8 @@ interface ChapaWebhooks {
   verify(input: VerifyWebhookInput): VerifiedWebhook;
 }
 ```
+
+Only exact `charge.success` with `status = 'success'` enters the frozen known variant. Every unsupported event, status, or shape enters `ChapaUnknownWebhookEvent`, which preserves usable common fields and `raw` without promising an unobserved provider shape. `VerifiedWebhook.signature` is the validated `x-chapa-signature` (X1) value; it never refers to C1, and C1 is not exposed as an independent verifier.
 
 **[REQ-API-04]** Test-signature generation is excluded from `ChapaService`. The `./testing` subpath may export `generateChapaTestSignature()` only for signature algorithms confirmed by reproducible M0.5 vectors.
 
@@ -1014,7 +1018,7 @@ interface ChapaInstrumentationHooks {
 
 ### 16.1.1 Fixture Requirements
 
-**[REQ-TEST-02]** Each sanitized fixture records operation, case name, test-mode environment, capture date, HTTP method/path, status, allowlisted headers, exact sanitized body, evidence state, expected normalization, and unresolved observations. Secrets, signatures tied to live secrets, personal data, and real account identifiers are never committed.
+**[REQ-TEST-02]** A committed sanitized JSON fixture and its Appendix F manifest entry collectively establish provenance. The fixture preserves the reviewed provider shape/body and retained operation metadata; retained safe header-name evidence may also remain in the fixture where available. Its linked manifest entry records canonical fixture identity, operation, case name, Test Mode environment, retained day-level evidence date, HTTP method/path/status, D/V/U state, supported claims, and unresolved claims. File existence is not evidence, and fixture-to-manifest linkage must remain valid. Adjudicated C/D/E non-fixture observations remain in the contract-freeze matrix rather than being fabricated as fixtures. Secrets, signatures tied to live secrets, personal data, and real account identifiers are never committed.
 
 The Appendix F fixture manifest contains the three actual M0.5-B JSON fixtures. Adjudicated C/D/E sanitized observations are indexed in the approved contract-freeze matrix rather than misrepresented as fixtures.
 
@@ -1040,8 +1044,8 @@ The Appendix F fixture manifest contains the three actual M0.5-B JSON fixtures. 
 - **[REQ-TEST-07]** 401 and 400 are never retried.
 - **[REQ-TEST-08]** Caller abort is distinguished from timeout.
 - **[REQ-TEST-09]** Malformed successful response throws `ChapaResponseError` with redacted raw data.
-- **[REQ-TEST-10]** Both valid and invalid webhook signatures use exact raw bytes.
-- **[REQ-TEST-11]** JSON reformatting changes the payload signature and is rejected.
+- **[REQ-TEST-10]** Valid and invalid X1 tests operate on exact raw bytes. C1 tests reproduce the frozen secret-on-secret construction separately; valid C1 never substitutes for X1 payload verification.
+- **[REQ-TEST-11]** JSON reformatting changes the X1 payload-signature input, and the mutated or reconstructed payload must fail X1 verification.
 - **[REQ-TEST-12]** Secrets and personal data never appear in logger snapshots.
 - **[REQ-TEST-13]** Unknown payment statuses and webhook event names/statuses remain accessible without unsafe coercion.
 - **[REQ-TEST-14]** Duplicate `txRef` responses remain generic `ChapaApiError` and never trigger an automatic second initialization.
@@ -1121,7 +1125,7 @@ The Appendix F fixture manifest contains the three actual M0.5-B JSON fixtures. 
 - **[REQ-DOC-01]** Installation and supported-version matrix.
 - **[REQ-DOC-02]** Synchronous and asynchronous configuration.
 - **[REQ-DOC-03]** Initialize, redirect, callback, verify, and fulfilment flow.
-- **[REQ-DOC-04]** Cancellation flow and its irreversible nature.
+- **[REQ-DOC-04]** Cancellation documentation explains the bodyless hosted-checkout cancellation flow, observed checkout-link expiration, and the explicit limitation that cancellation does not establish a universal transaction-state transition.
 - **[REQ-DOC-05]** Version-1 scope documentation explicitly states that provider refund creation and verification are deferred pending a separate evidence milestone and specification revision.
 - **[REQ-DOC-06]** Express and Fastify raw-body webhook setup.
 - **[REQ-DOC-07]** Error handling and retry semantics.
@@ -1213,9 +1217,9 @@ nestjs-chapa/
 | M0.5 - Contract verification | Completed A-F evidence inventory, adjudication, fixture manifest, contract matrix, and normative freeze. | F7 verifies final alignment, records raw-evidence disposition, closes M0.5, and explicitly decides M1 authorization. |
 | M1 - Repository foundation | Governance files, package skeleton, CI, build proof, release preview, and contributor workflow. | Packed empty library installs in ESM/CJS Nest consumers; governance and package identity are confirmed. |
 | M2 - Core infrastructure | Configuration, one-attempt transport, request executor, errors, validation, logging, safe-read retry engine. | Failure-mode and public-boundary tests pass. |
-| M3 - Payments | Initialize, verify, cancel, references. | V-state fixtures and documented recovery flows pass. |
+| M3 - Payments | Initialize, verify, cancel, references. | Evidence-backed contract tests and documented recovery flows pass against the frozen D/V/U contract. |
 | M4 - Metadata | Banks and supported currencies. | Evidence-honest normalization and failure tests pass. |
-| M5 - Webhooks | Raw-body verification, event parsing, Express/Fastify examples. | Captured valid and invalid Chapa vectors pass. |
+| M5 - Webhooks | Raw-body verification, event parsing, Express/Fastify examples. | M0.5-reproduced provider-derived X1/C1 vectors and deterministic invalid/mutation vectors pass. |
 | M6 - Release candidate | Docs, consumer tests, security review, protected sandbox smoke. | 0.x release candidate published with provenance. |
 | M7 - Stable 1.0 | Public npm and GitHub release. | All acceptance criteria satisfied. |
 
@@ -1285,7 +1289,7 @@ OQ-13 remains outside M0.5 and belongs to M1 governance and maintainer documenta
 
 ## 22.1 Risk Controls
 
-- **[REQ-RISK-01]** Capture and version sanitized test-mode fixtures before coding each ambiguous endpoint.
+- **[REQ-RISK-01]** Before coding an ambiguous provider contract, the repository must contain reviewable sanitized Test Mode evidence appropriate to its provenance: either an actual fixture indexed by Appendix F or an adjudicated sanitized provider observation indexed by the M0.5 contract-freeze matrix. Plans and synthetic/local tests alone do not satisfy provider verification, and non-fixture evidence must not be forced into the fixture manifest.
 - **[REQ-RISK-02]** Keep unknown fields in raw responses and unknown enum values in explicit `unknown` states.
 - **[REQ-RISK-03]** Ship alpha releases for consumer testing before stable 1.0.
 - **[REQ-RISK-04]** Document every contract deviation from official Chapa documentation in an ADR and changelog.
