@@ -147,7 +147,8 @@ describe('M0.5-D D6 refund request boundary', () => {
     } catch (caught) { error = caught; }
     assert.equal(error.kind, 'transport');
     assert.equal(error.attemptCount, 1);
-    assert.equal(error.txRef, target);
+    assert.equal(error.refundTargetIdentifier, target);
+    assert.equal(Object.hasOwn(error, 'txRef'), false);
     assert.deepEqual(calls, [[createUrl, 'POST']]);
     assert.equal(error.message.includes('unsafe detail'), false);
   });
@@ -167,7 +168,8 @@ describe('M0.5-D D6 refund request boundary', () => {
     } catch (caught) { error = caught; }
     assert.equal(error.kind, 'timeout');
     assert.equal(error.attemptCount, 1);
-    assert.equal(error.txRef, target);
+    assert.equal(error.refundTargetIdentifier, target);
+    assert.equal(Object.hasOwn(error, 'txRef'), false);
     assert.deepEqual(calls, [[createUrl, 'POST']]);
   });
 });

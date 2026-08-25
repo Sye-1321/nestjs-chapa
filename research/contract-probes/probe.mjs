@@ -42,6 +42,7 @@ export async function executeOperation(operation, payloadOrReference, options = 
   let method = 'GET';
   let body;
   let txRef;
+  let refundTargetIdentifier;
 
   if (operation === 'banks') {
     url = buildBanksUrl();
@@ -74,7 +75,7 @@ export async function executeOperation(operation, payloadOrReference, options = 
     url = buildRefundCreateUrl(payloadOrReference.targetIdentifier);
     method = 'POST';
     body = encodeRefundBody(payloadOrReference.input ?? {});
-    txRef = payloadOrReference.targetIdentifier;
+    refundTargetIdentifier = payloadOrReference.targetIdentifier;
   } else if (operation === 'refund-verify') {
     url = buildRefundVerifyUrl(payloadOrReference);
   } else {
@@ -93,8 +94,11 @@ export async function executeOperation(operation, payloadOrReference, options = 
     if (body !== undefined) requestOptions.body = body;
     return await executeRequest(url, requestOptions);
   } catch (err) {
-    if ((operation === 'initialize' || operation === 'cancel' || operation === 'refund-create') && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
+    if ((operation === 'initialize' || operation === 'cancel') && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
       err.txRef = txRef;
+    }
+    if (operation === 'refund-create' && refundTargetIdentifier && (err.kind === 'timeout' || err.kind === 'transport')) {
+      err.refundTargetIdentifier = refundTargetIdentifier;
     }
     throw err;
   }
