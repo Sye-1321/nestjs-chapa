@@ -1,6 +1,6 @@
 # Implementation Plan: M1 Repository Foundation
 
-**Status**: Proposed — awaiting maintainer approval
+**Status**: Approved
 **Owner**: Sye (Sye-1321)
 
 ## 1. Goal
@@ -22,7 +22,7 @@ M1 may implement only the repository foundation needed to prove:
 - lint, format, typecheck, and foundation-test commands;
 - packed-tarball content and module-resolution checks;
 - clean packed consumers spanning NestJS 10/11, ESM/CJS, and Node 22/24;
-- offline/provider-free GitHub Actions CI;
+- provider-offline/Chapa-offline GitHub Actions CI;
 - Changesets, versioning, changelog, package-preview, and trusted-publishing preparation;
 - governance, README, roadmap, contribution, and pull-request workflow synchronization;
 - separately reviewed repository-protection settings.
@@ -110,7 +110,7 @@ The audit found none of the following on current main:
 | Types | No declarations | Public declarations resolve without internal/Zod leakage. |
 | Testing | Research tests only | Separate production-foundation tests and packed consumer matrix. |
 | Package security | No publish allowlist | Explicit `files` allowlist plus tarball assertion; never rely on `.gitignore`. |
-| CI | None | Offline, immutable, least-privilege PR validation on Node 22/24. |
+| CI | None | Provider-offline/Chapa-offline, immutable, least-privilege PR validation on Node 22/24. |
 | Versioning/release | Changelog only | Changesets and non-publishing release preview. |
 | Documentation | Governance mostly present; README/roadmap stale | Synchronize only to implemented foundation and frozen v1 exclusions. |
 | Repository controls | Required by specification; not audited as settings in Git | Separate read-only audit and separately authorized settings proposal. |
@@ -121,22 +121,22 @@ The audit found none of the following on current main:
 
 Keep the comparison to two candidates:
 
-1. **TypeScript `tsc` dual-pass/project-reference build** — the minimal non-bundling baseline. Separate deterministic ESM and CJS emission configurations share strict type settings; TypeScript emits declarations/declaration maps from a single controlled declaration pass.
-2. **`tsup` with TypeScript declaration verification** — a controlled esbuild-based bundling candidate configured for ESM and CJS, external dependencies, source maps, and declarations. Generated declarations must still pass `tsc --noEmit`, packed-consumer checks, and declaration-boundary audit.
+1. **TypeScript `tsc` dual-format build** — the minimal non-bundling baseline. Separate deterministic ESM and CJS emission configurations share strict type settings while permitting format-specific source/output conventions where required for correct runtime and declaration identity.
+2. **Stable `tsdown`** — a maintained Rolldown-based library-bundler candidate configured for ESM and CJS, external dependencies, source maps, and independently verified declarations. A beta or prerelease is forbidden.
 
-No Rollup plugin stack, Babel/SWC chain, or third candidate is introduced unless both candidates fail a named criterion and the maintainer approves a plan update.
+Before pinning `tsdown`, M1-2 verifies its current stable version, build-host Node requirement, license, maintenance/security status, and relevant Node-target support. No Rollup plugin stack, Babel/SWC chain, or third candidate is introduced unless both candidates fail a named criterion and the maintainer approves a plan update.
 
 ### 7.2 Common proof fixture
 
 Each candidate builds the same inert proof surface containing:
 
-- a root entry with explicitly foundation-only symbols;
-- a distinct `./testing` inert entry;
+- an effectively empty root entry (`export {}`) when sufficient;
+- an effectively empty `./testing` entry (`export {}`) when sufficient;
 - a minimal decorator/metadata compilation fixture sufficient to validate NestJS-compatible TypeScript emission without implementing `ChapaModule` or provider behavior;
 - an internal-only symbol and internal-only schema-shaped fixture that must not be exported;
 - an external import fixture proving Zod and NestJS peers are not bundled or duplicated.
 
-Proof fixtures must not become fake public SDK behavior. Candidate-only material is removed when the selected configuration is finalized unless it is a legitimate inert foundation export.
+Proof fixtures must remain internal test/proof material outside the public export graph. They must not become public named placeholders or enter the packed tarball unless a file is intentionally part of the approved M1 package boundary.
 
 ### 7.3 Deterministic pass/fail matrix
 
@@ -144,18 +144,18 @@ Every row is mandatory; popularity, speed, or convenience cannot compensate for 
 
 | Criterion | Proof |
 |---|---|
-| Node 22 and 24 | Build and packed consumers execute across both CI Node majors. |
+| Build host versus runtime floors | Build tooling runs on an explicitly supported Node 22/24 build host. The packed package is separately validated at the declared runtime floors Node 22.0.0 and Node 24.0.0 where practical. If a CI context cannot provide an exact floor, record it and require equivalent reproducible local/container proof before M1 closeout. Build-tool requirements never silently narrow `engines`. |
 | TypeScript 5.7+ | Frozen compiler version satisfies strict typecheck and declaration consumption. |
 | Decorators/metadata | Compile and execute the inert Nest-compatible decorator fixture with the selected compiler settings. |
 | ESM and CJS | Native ESM import and CommonJS require/import succeed from packed tarball consumers. |
-| Declarations/maps | `.d.ts` and required `.d.ts.map` resolve for both public entry points. |
+| Declarations/maps | ESM and CJS consumers each resolve the correct declaration identity. Permit `.d.mts`, `.d.cts`, format-specific maps, and nested conditional `types` branches when required; do not force one generic declaration output. |
 | Source maps | Runtime stack maps to a controlled source location; maps contain no absolute developer path. |
 | Exports | Only `.` and `./testing` plus `./package.json` if deliberately approved are resolvable. |
 | External dependencies | Zod and Nest peers are absent from bundled code and resolve from intended dependency classes. |
 | Server-only output | No IIFE/browser build, browser polyfill, `window`, or injected DOM shim. |
 | Determinism | Clean build twice from the same checkout produces the same file list and byte hashes after excluding no fields; unexplained nondeterminism fails. |
 | Tarball correctness | Automated allowlist passes and forbidden paths are absent. |
-| Consumer installation | Four clean Nest consumer fixtures install the generated tarball, never a workspace link. |
+| Consumer installation | Four clean Nest consumer fixtures install the generated tarball, never a workspace link. ESM/CJS runtime and declarations pass under NodeNext/Node-oriented resolution and relevant bundler resolution, with no TS1479-style mismatch or implicit `any` from an unresolved types branch. |
 | Public boundary | Declaration/export audit rejects `ChapaClient`, executor internals, private transports/resources, and Zod schemas/types. |
 | Import safety | Root and testing imports perform zero network activity and require no Chapa credential. |
 | Diagnostics | Stack traces/source maps are usable and no missing runtime dependency appears. |
@@ -185,7 +185,7 @@ The exact pnpm version is selected during M1-2 after current Node 22/24 compatib
 The initial `package.json` must define:
 
 - `name: "@sye1321/nestjs-chapa"`;
-- an unreleased initial version and `private: true` until the release-preview gate explicitly reviews removing it;
+- an unreleased initial version with `private: true` retained throughout M1;
 - community-maintained description, repository, bugs, homepage, author/maintainer, MIT license, funding if applicable, and keywords without implying Chapa endorsement;
 - `engines.node: "^22.0.0 || ^24.0.0"` and pinned `packageManager`;
 - explicit `type`, `main`, `module` only if justified, `types`, conditional `exports`, and `files` allowlist;
@@ -249,14 +249,16 @@ M1 tests the built and packed artifacts, not repository-relative source imports:
 
 ## 12. Exports and Public-Boundary Design
 
-Initial exports are closed by default:
+Initial exports are closed by default. The proof determines whether ESM and CJS require format-specific declarations and nested `types` targets under `import` and `require`; the selected layout is evidence-driven:
 
 - `.` maps ESM import, CommonJS require, and types to their exact built files.
 - `./testing` maps only its separate inert foundation entry.
 - `./package.json` is included only if a concrete consumer need is approved; otherwise it remains private.
 - no wildcard export and no `dist/*`, `src/*`, `core/*`, or other deep import.
 
-Automated checks must prove private paths fail resolution. A declaration/export allowlist prevents future leakage of `ChapaClient`, `ChapaRequestExecutor`, internal schemas, Zod types, transport internals, and private resource implementations. M1 does not add future root exports merely because the specification names them; those exports appear only when their owning milestone implements them.
+Automated checks must prove private paths fail resolution. A declaration/export allowlist prevents future leakage of `ChapaClient`, `ChapaRequestExecutor`, internal schemas, Zod types, transport internals, and private resource implementations. M1 does not add future root exports merely because the specification names them; `src/index.ts` and `src/testing/index.ts` may remain `export {}` so packaging proof creates no accidental public API.
+
+REQ-PKG-15 requires both type checking and API extraction. M1-2/M1-3 must evaluate Microsoft API Extractor against the selected module/declaration architecture and prove extraction of the inert `.` and `./testing` surfaces. The gate must detect accidental entry-point exports, `ChapaClient` or executor leakage, Zod schema/type leakage, unexpected dependency types, and unintended API drift. `tsc --noEmit` or declaration grep alone is insufficient. A documented equivalent may replace API Extractor only if it demonstrates the same reviewed public-API contract and receives maintainer confirmation before it is frozen.
 
 ## 13. Dependency and Peer-Dependency Policy
 
@@ -336,7 +338,7 @@ Run `npm pack --dry-run --json` and an actual tarball listing/inspection. Verify
 
 ## 17. CI Design
 
-Normal pull-request CI remains offline and provider-free. Proposed jobs:
+Normal pull-request CI is **provider-offline/Chapa-offline**, not necessarily internet-offline. It may access GitHub, npm/pnpm registries, and approved vulnerability-metadata endpoints required for checkout, installation, and auditing. It must never contact `api.chapa.co`, Chapa checkout/webhook endpoints, or any Test Mode/live provider endpoint, and ordinary CI must contain no Chapa credential. Foundation/unit/package tests remain network-independent wherever possible. Proposed jobs:
 
 1. **install-policy** — checkout, pinned Corepack/pnpm, Node 22, frozen-lockfile install, lockfile/package-script audit.
 2. **quality** — format check, lint, typecheck, documentation command/link/example checks that exist in M1.
@@ -368,9 +370,9 @@ M1 creates a non-publishing release-preview command/workflow design that:
 - creates and inspects the tarball;
 - installs it in consumers;
 - reports package contents and provenance readiness;
-- uses `npm publish --dry-run` only if it is demonstrably non-publishing and separately reviewed.
+- performs no publish command.
 
-Trusted-publishing preparation may document the intended GitHub environment, npm package identity, OIDC permissions, provenance flag, and release authority. It must not configure npm production access, create tokens/secrets, publish, create a GitHub release, or enable a release workflow capable of publication without a later explicit release gate.
+The M1 release preview uses Changesets status/version preview, a clean build, `npm pack --dry-run --json`, an actual `npm pack`, tarball inspection, and clean packed-consumer installation. It verifies Changesets behavior for a private single-package repository and deliberately configures any private-package option required for version preview. `private: true` remains throughout M1. Trusted-publishing preparation may document the intended GitHub environment, npm package identity, OIDC permissions, provenance flag, and release authority. It must not invoke any publish command, configure npm production access, create tokens/secrets, publish, create a GitHub release, or enable a release workflow capable of publication without a later explicit release gate.
 
 ## 20. Governance and Contributor Synchronization
 
@@ -426,7 +428,7 @@ M1 validation must prove:
 - Pin pnpm and create the initial manifest/lockfile.
 - Create only the approved inert proof surface.
 - Install the minimal candidate/proof dependencies.
-- Execute the common pass/fail matrix for `tsc` dual-pass and `tsup`.
+- Execute the common pass/fail matrix for `tsc` dual-format and stable `tsdown`.
 - Record and obtain maintainer approval for exactly one selected build tool before finalizing the package architecture.
 
 ### M1-3 — Selected build, exports, and package boundary
@@ -442,7 +444,7 @@ M1 validation must prove:
 
 ### M1-5 — CI, Changesets, release preview, and governance synchronization
 
-- Add offline CI jobs, Changesets, non-publishing release preview, leak controls, and exact governance/docs synchronization.
+- Add provider-offline/Chapa-offline CI jobs, Changesets, non-publishing release preview, leak controls, and exact governance/docs synchronization.
 - Perform read-only repository-settings audit and prepare the separate settings action list.
 
 ### M1-6 — Final validation and coherent PR
@@ -484,7 +486,7 @@ M1 is complete only when:
 - Zod and NestJS peers are external, correctly classified, and not leaked through declarations;
 - Node 22/24 and NestJS 10/11 packed consumer coverage passes for ESM and CJS;
 - the actual tarball installs into clean consumers and contains only the approved allowlist;
-- install, format, lint, typecheck, foundation tests, build, package audit, consumers, and leak checks pass offline with a frozen lockfile;
+- install, format, lint, typecheck, foundation tests, build, package audit, consumers, and leak checks pass under the provider-offline/Chapa-offline boundary with a frozen lockfile;
 - normal PR CI is provider-free and least privilege;
 - Changesets and a non-publishing release preview work without tokens or publication;
 - documentation and contributor workflow describe only commands and behavior that exist;
@@ -500,6 +502,13 @@ M1 is complete only when:
 - `README.md` is currently title-only. `ROADMAP.md` still describes M0.5 as future work and incorrectly assigns refunds to M4; both require M1 synchronization to the frozen contract.
 - `CONTRIBUTING.md` already anticipates Changesets in M1 but cannot yet provide real install/test/build commands.
 - No package manifest, lockfile, TypeScript/build config, production source, consumer test fixture, workflow, Changesets config, lint/format config, API extraction config, or release config exists.
-- OQ-07 remains deliberately unresolved until M1-2 compares `tsc` dual-pass and `tsup` against one mandatory proof matrix. This plan selects neither tool.
+- OQ-07 remains deliberately unresolved until M1-2 compares `tsc` dual-format and stable `tsdown` against one mandatory proof matrix. This plan selects neither tool.
 - pnpm is proposed, not installed or frozen by this planning checkpoint.
 - This planning checkpoint creates no package/source/workflow file, installs no dependency, makes no provider request, uses no secret, and does not modify the M0.5 freeze or specification.
+- Maintainer correction 1 replaced unmaintained `tsup` with stable `tsdown` and requires version, build-host Node, license, maintenance/security, and target verification before pinning.
+- Maintainer correction 2 separates build-tool host requirements from the frozen package engines and requires packed runtime-floor proof at Node 22.0.0 and 24.0.0 where practical.
+- Maintainer correction 3 permits format-specific `.d.mts`/`.d.cts` artifacts and conditional type branches; declaration correctness must be proved independently for ESM, CJS, NodeNext/Node-oriented, and bundler consumers.
+- Maintainer correction 4 removes public foundation placeholders: public entry points may be empty modules, while decorator/Zod/internal/source-map proof fixtures remain private and unpackaged.
+- Maintainer correction 5 adds an explicit REQ-PKG-15 API-extraction gate, preferring Microsoft API Extractor and requiring maintainer confirmation for any equivalent.
+- Maintainer correction 6 defines normal CI precisely as provider-offline/Chapa-offline while permitting required GitHub, registry, and approved vulnerability-metadata access.
+- Maintainer correction 7 removes every publish command from M1, keeps the package private, and limits release preview to Changesets preview, build, pack inspection, and clean packed consumers.
