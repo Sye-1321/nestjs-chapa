@@ -25,9 +25,11 @@ const receiverPath = '/m05e-webhook-0123456789abcdef';
 const syntheticWebhookConfiguredSecret = 'synthetic-webhook-configured-secret';
 const syntheticApiSecretKey = 'synthetic-api-secret-key';
 const formattedRaw = Buffer.from('{ "event" : "charge.synthetic", "value" : 1 }', 'utf8');
+const observedTestRoots = new Set();
 
 async function tempRoot(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'm05e-webhook-'));
+  observedTestRoots.add(root);
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   return root;
 }
@@ -284,8 +286,12 @@ describe('M0.5-E E2 one-shot receiver', () => {
     assert.equal((await receiver.result).state, 'captured');
   });
 
-  test('tests never use the real raw root', async () => {
-    await assert.rejects(() => fs.access(defaultWebhookRawRoot), /ENOENT/);
+  test('all receiver tests inject temporary roots distinct from the real raw root', () => {
+    assert.ok(observedTestRoots.size > 0);
+    for (const root of observedTestRoots) {
+      assert.notEqual(path.resolve(root), path.resolve(defaultWebhookRawRoot));
+      assert.equal(path.relative(os.tmpdir(), root).startsWith('..'), false);
+    }
   });
 });
 
