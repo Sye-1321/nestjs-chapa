@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { buildRefundCreateUrl, buildRefundVerifyUrl, encodeRefundBody } from './lib/refund.mjs';
 
 export function buildBanksUrl() {
   return 'https://api.chapa.co/v1/banks';
@@ -66,6 +67,16 @@ export async function executeOperation(operation, payloadOrReference, options = 
     url = buildCancelUrl(payloadOrReference);
     method = 'PUT';
     txRef = payloadOrReference;
+  } else if (operation === 'refund-create') {
+    if (!payloadOrReference || typeof payloadOrReference !== 'object' || Array.isArray(payloadOrReference)) {
+      throw new Error('Local guard: refund-create requires a reviewed target identifier and input');
+    }
+    url = buildRefundCreateUrl(payloadOrReference.targetIdentifier);
+    method = 'POST';
+    body = encodeRefundBody(payloadOrReference.input ?? {});
+    txRef = payloadOrReference.targetIdentifier;
+  } else if (operation === 'refund-verify') {
+    url = buildRefundVerifyUrl(payloadOrReference);
   } else {
     throw new Error('Unknown operation');
   }
@@ -82,7 +93,7 @@ export async function executeOperation(operation, payloadOrReference, options = 
     if (body !== undefined) requestOptions.body = body;
     return await executeRequest(url, requestOptions);
   } catch (err) {
-    if ((operation === 'initialize' || operation === 'cancel') && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
+    if ((operation === 'initialize' || operation === 'cancel' || operation === 'refund-create') && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
       err.txRef = txRef;
     }
     throw err;
