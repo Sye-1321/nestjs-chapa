@@ -1,0 +1,69 @@
+[
+  {
+    "id": "m05-b1-banks-test-mode-success",
+    "operation": "metadata.listBanks",
+    "caseName": "observed Test Mode banks response shape",
+    "environment": "chapa-test-mode",
+    "capturedAt": "2026-08-17",
+    "method": "GET",
+    "path": "/v1/banks",
+    "httpStatus": 200,
+    "evidence": "V",
+    "sanitized": true,
+    "fixturePath": "test/fixtures/chapa/banks.test-mode.success.json",
+    "supports": [
+      "M05-B1-BANKS-TEST-MODE-RESPONSE-SHAPE",
+      "M05-B1-BANK-FLAG-WIRE-TYPES"
+    ],
+    "unresolved": [
+      "M05-B1-PERMANENT-BANK-MEMBERSHIP",
+      "M05-B1-FLAG-BOOLEAN-NORMALIZATION",
+      "M05-B1-LIVE-MODE-PARITY"
+    ]
+  },
+  {
+    "id": "m05-b2-currencies-test-mode-success",
+    "operation": "metadata.listCurrencies",
+    "caseName": "observed Test Mode supported-currency parallel arrays",
+    "environment": "chapa-test-mode",
+    "capturedAt": "2026-08-17",
+    "method": "GET",
+    "path": "/v1/currency_supported",
+    "httpStatus": 200,
+    "evidence": "V",
+    "sanitized": true,
+    "fixturePath": "test/fixtures/chapa/currencies.test-mode.success.json",
+    "supports": [
+      "M05-B2-CURRENCIES-PARALLEL-ARRAY-SHAPE",
+      "M05-B2-CURRENCY-CODE-NUMERIC",
+      "M05-B2-CURRENCY-NAME-TEXTUAL"
+    ],
+    "unresolved": [
+      "M05-B2-PERMANENT-CURRENCY-MEMBERSHIP",
+      "M05-B2-PARALLEL-ARRAY-MISMATCH-BEHAVIOR",
+      "M05-B2-LIVE-MODE-PARITY"
+    ]
+  },
+  {
+    "id": "m05-b3-verify-synthetic-invalid-reference",
+    "operation": "payments.verify",
+    "caseName": "exact synthetic-reference rejection",
+    "environment": "chapa-test-mode",
+    "capturedAt": "2026-08-17",
+    "method": "GET",
+    "path": "/v1/transaction/verify/m05b_unknown_20260817_7f4c91a2e6bd43d8",
+    "httpStatus": 400,
+    "evidence": "V",
+    "sanitized": true,
+    "fixturePath": "test/fixtures/chapa/transaction-verify.test-mode.synthetic-invalid-reference.json",
+    "supports": [
+      "M05-B3-EXACT-SYNTHETIC-REFERENCE-REJECTION"
+    ],
+    "unresolved": [
+      "M05-B3-PROVIDER-VALID-NONEXISTENT-REFERENCE",
+      "M05-B3-UNPAID-PENDING-404-DISCRIMINATOR",
+      "M05-B3-GENERAL-UNKNOWN-REFERENCE-BEHAVIOR",
+      "M05-B3-LIVE-MODE-PARITY"
+    ]
+  }
+]

@@ -2,13 +2,13 @@
 
 ## Full Technical Specification & Implementation Contract
 
-**Version:** 1.0 - Final Pre-Implementation Baseline  
-**Status:** APPROVED FOR REPOSITORY FOUNDATION & M0.5 CONTRACT VERIFICATION  
+**Version:** 1.0 - M0.5 Contract-Freeze Baseline
+**Status:** APPROVED M0.5 CONTRACT FREEZE — F7 COMPLETE; MERGE REQUIRED BEFORE M1
 **Project owner & maintainer:** Sye (GitHub: `Sye-1321`)  
 **Repository:** `Sye-1321/nestjs-chapa`  
 **npm package:** `@sye1321/nestjs-chapa`  
-**Date:** 6 August 2026  
-**Execution gate:** M0.5 Provider Research Direct Probes
+**Date:** 25 August 2026
+**Execution gate:** Merge and post-merge verification of the coherent M0.5-F PR; M1 is not yet authorized
 
 A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment Platform. Designed with framework-independent core architecture, evidence-driven contract boundaries, and zero implicit network retries.
 
@@ -20,18 +20,19 @@ A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment P
 |---|---|
 | Document title | NestJS Chapa - Technical Specification |
 | Version | 1.0 |
-| Status | APPROVED |
+| Status | APPROVED M0.5 CONTRACT FREEZE — F7 COMPLETE; MERGE REQUIRED BEFORE M1 |
 | Primary owner | Sye (GitHub: `Sye-1321`) |
 | Implementation target | Repository `Sye-1321/nestjs-chapa` and npm package `@sye1321/nestjs-chapa` |
-| Approval gate | Repository foundation and M0.5 may proceed. Production payment code remains blocked until M0.5 passes. |
-| Source-of-truth order | Official Chapa documentation; sandbox-verified fixtures; official NestJS, Node.js, and npm documentation. |
-| Last updated | 6 August 2026 |
+| Approval gate | Merge and post-merge verification of the coherent M0.5-F PR are required before M1 production implementation may be separately authorized. |
+| Source-of-truth order | Official Chapa documentation; maintainer-adjudicated sanitized Test Mode evidence; official NestJS, Node.js, and npm documentation. |
+| Last updated | 25 August 2026 |
 
 ### Revision History
 
 | Version | Date | Change |
 |---|---|---|
 | 1.0 Final | 6 Aug 2026 | Approved pre-implementation specification. Confirms product scope, repository and package identity, M0.5 contract verification, public API, governance, testing, release controls, and acceptance criteria. |
+| 1.0 M0.5 Contract Freeze | 25 Aug 2026 | Applied the maintainer-adjudicated M0.5 contract freeze: narrowed version-1 scope, synchronized evidence-backed normalization and webhook security rules, recorded explicit deferrals, and retained F7 as the gate before M1. |
 
 ## Table of Contents
 
@@ -72,7 +73,7 @@ A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment P
 
 This specification defines the open-source Chapa integration for NestJS published as `@sye1321/nestjs-chapa` from the `Sye-1321/nestjs-chapa` repository. It establishes the product boundary, public API, architecture, reliability policy, security requirements, package structure, provider-evidence gate, testing obligations, release controls, and acceptance criteria.
 
-The package exposes a NestJS-native API over an internal framework-independent core. The core isolates transport, validation, and cryptography for testing; version 1 does not support it as a separate Node.js product. Version 1.0 covers hosted-payment initialization, verification, cancellation, refunds, bank and currency metadata, transaction references, and webhook verification.
+The package exposes a NestJS-native API over an internal framework-independent core. The core isolates transport, validation, and cryptography for testing; version 1 does not support it as a separate Node.js product. Version 1.0 covers hosted-payment initialization, payment verification, hosted-checkout cancellation, bank and supported-currency metadata, transaction references, and webhook verification. Provider refund creation and verification are deferred pending a separate evidence milestone and specification revision.
 
 Safety takes precedence over convenience. Mutating calls do not retry automatically. Webhook verification uses exact raw bytes. Databases, queues, order state, fulfilment, deduplication, reconciliation, and business workflows remain host-application responsibilities.
 
@@ -106,7 +107,7 @@ This document is the implementation contract for `Sye-1321/nestjs-chapa`. It fix
 4. Make network uncertainty explicit and prevent duplicate side effects caused by generic retries.
 5. Provide secure, platform-aware webhook utilities for both Express and Fastify Nest applications.
 6. Publish a trustworthy open-source npm package with reproducible CI, provenance, release notes, and a support policy.
-7. Classify every Chapa-dependent contract as documented, sandbox-verified, or unresolved before freezing public types.
+7. Classify every Chapa-dependent contract as documented, Test Mode verified, or unresolved before freezing public types.
 
 ## 2.3 Non-goals
 
@@ -124,7 +125,7 @@ Where sources conflict, the following authority order applies. Lower-ranked sour
 | Priority | Source | Use |
 |---:|---|---|
 | 1 | Current official Chapa developer documentation | Endpoint, authentication, request and response semantics, webhook behaviour, supported statuses. |
-| 2 | Observed Chapa test-mode behaviour and captured fixtures | Resolve ambiguous or incomplete documentation. Every deviation must be documented. |
+| 2 | Maintainer-adjudicated sanitized Chapa Test Mode fixtures and provider observations | Resolve ambiguous or incomplete documentation within their exact recorded boundary. Every deviation must be documented. |
 | 3 | Official NestJS, Node.js and npm documentation | Framework integration, runtime support, package publication and security. |
 
 ## 3.1 Contract Evidence Classification
@@ -134,21 +135,21 @@ Every Chapa-dependent contract carries one of the following evidence states. Arc
 | Code | State | Meaning and release rule |
 |---|---|---|
 | `A` | Accepted architecture decision | Internal design decision. It is normative for implementation but does not claim Chapa behaviour. |
-| `D` | Documented, not fixture-verified | Supported by current official documentation. The method/path may be implemented, but ambiguous shapes remain tolerant and provisional. |
-| `V` | Sandbox-verified | Confirmed by sanitized test-mode request/response or webhook fixtures with reproducible observations. Required before freezing ambiguous normalized fields. |
+| `D` | Documented | Supported by current official documentation. The method/path may be implemented, but ambiguous shapes remain tolerant and provisional. |
+| `V` | Test Mode verified | Confirmed either by a human-reviewed sanitized Test Mode fixture or by a human-reviewed sanitized provider observation with explicit maintainer adjudication. Synthetic/local tests and plans alone cannot create V. V is narrow to its recorded scenario and does not imply live-mode parity. |
 | `U` | Unresolved or provisional | Insufficient evidence. The operation or field is deferred, gated, or exposed only as raw data until resolved. |
 
 ### Requirement Notation
 
-`REQ-*` identifiers are stable references for code, tests, pull requests, and release evidence. **MUST** marks a release-blocking requirement; **SHOULD** requires a documented exception; **MAY** is optional. Evidence tags use `A` (architecture), `D` (documented), `V` (sandbox-verified), and `U` (unresolved).
+`REQ-*` identifiers are stable references for code, tests, pull requests, and release evidence. **MUST** marks a release-blocking requirement; **SHOULD** requires a documented exception; **MAY** is optional. Evidence tags use `A` (architecture), `D` (documented), `V` (Test Mode verified), and `U` (unresolved).
 
 > **Public Contract Freeze Rule**
 >
-> A Chapa-dependent field may be mandatory in a normalized result only when official documentation is clear or M0.5 fixtures demonstrate a stable invariant. U-state behaviour cannot ship as a promised version 1.0 contract.
+> A Chapa-dependent field may be mandatory in a normalized result only when official documentation is clear or maintainer-adjudicated M0.5 evidence supports the exact invariant. U-state behaviour cannot ship as a promised version 1.0 contract.
 
 ## 3.2 Known Documentation Ambiguities
 
-- The documentation describes two webhook signature headers but uses ambiguous wording for how the non-payload signature is derived. Implementation must be validated with real test-mode webhook vectors before both modes are declared supported.
+- The documentation describes two webhook headers ambiguously. M0.5 reproduced X1 as the required raw-payload HMAC and C1 as secret-on-secret; C1 is secondary only and never a payload verifier. Provider conflict semantics remain U.
 - Some endpoint pages omit complete response schemas or use inconsistent field names such as `tx_ref`, `trx_ref`, `reference`, `ref_id`, and `payment_reference`.
 - The documented supported-currency response example appears internally inconsistent: the prose refers to currency codes while the example separates numeric codes and names.
 - Some status/error documentation may represent business states through non-2xx HTTP responses. The client must not collapse these into a single payment status.
@@ -168,8 +169,6 @@ Every Chapa-dependent contract carries one of the following evidence states. Arc
 | Payments | Initialize hosted payment | `POST /v1/transaction/initialize` | No |
 | Payments | Verify payment | `GET /v1/transaction/verify/{tx_ref}` | One eligible retry |
 | Payments | Cancel active transaction | `PUT /v1/transaction/cancel/{tx_ref}` | No |
-| Refunds | Create refund | `POST /v1/refund/{tx_ref}` | No |
-| Refunds | Verify refund | `GET /v1/refund/{ref_id}/verify` | One eligible retry |
 | Metadata | List banks | `GET /v1/banks` | One eligible retry |
 | Metadata | List supported currencies | `GET /v1/currency_supported` | One eligible retry |
 | Webhooks | Verify and parse event | Local cryptographic operation | Not applicable |
@@ -184,17 +183,18 @@ Every Chapa-dependent contract carries one of the following evidence states. Arc
 
 ## 4.3 Deferred Specialized Domains
 
+- Provider refund creation and verification, including target identity, eligibility, request/meta encoding, result shapes, status lifecycle, and verification contract.
 - Transfers, bulk transfers, and transfer approval callbacks.
 - Direct charges and direct-charge authorization.
 - Balance and currency-swap operations.
 - Virtual accounts and virtual-account credit history.
 - Testing-card and testing-mobile-number catalogues.
 
-These domains are deferred because they have distinct security, approval, balance, operational, or payment-method-specific concerns. They may be added as separate resource modules without breaking the version 1.0 architecture.
+These domains are deferred because they have unresolved evidence or distinct security, approval, balance, operational, or payment-method-specific concerns. Refunds require a separately approved provider-evidence milestone and specification revision; no future release number is assigned here. Other domains may be added through their own approved scope and evidence changes.
 
 ## 4.4 Explicitly Excluded Operations
 
-Version 1 excludes a separate mobile-initialize method unless current Chapa documentation and M0.5 evidence define a stable contract. Unsupported or undocumented operations do not enter the public API.
+Version 1 excludes provider refund create/verify, a separate mobile-initialize method, and every unsupported or undocumented operation. None enters the public API without an approved evidence milestone and specification revision.
 
 ## 4.5 Public Product Boundary
 
@@ -278,7 +278,6 @@ ChapaModule (configuration + DI)
       v
 ChapaService facade
       |-- payments
-      |-- refunds
       |-- metadata
       |-- webhooks
       `-- references
@@ -302,7 +301,7 @@ https://api.chapa.co/v1
 ## 7.2 Core Principles
 
 - **[REQ-ARCH-01]** Framework-independent core. The core client imports no NestJS modules or HTTP exceptions.
-- **[REQ-ARCH-02]** Resource-oriented API. Payments, refunds, metadata, webhooks, and reference utilities are separate clients rather than one growing monolithic service.
+- **[REQ-ARCH-02]** Resource-oriented API. Payments, metadata, webhooks, and reference utilities are separate clients rather than one growing monolithic service. Provider refunds are not an active version-1 resource.
 - **[REQ-ARCH-03]** Injectable transport. Tests and advanced users may replace the default transport without monkey-patching global `fetch`.
 - **[REQ-ARCH-04]** Stateless library. All durable business state remains with the host application.
 - **[REQ-ARCH-05]** Tolerant response parsing. Known safety-critical fields are validated while unknown Chapa fields are preserved.
@@ -315,7 +314,6 @@ https://api.chapa.co/v1
 | `ChapaService` | Expose resource clients and a stable Nest injection point. | Duplicate transport logic. |
 | `ChapaClient` (internal) | Compose resource clients over configuration, executor, validation, errors, and logging. | Import NestJS. |
 | `PaymentsResource` | Initialize, verify, and cancel transactions. | Fulfil orders or persist payment status. |
-| `RefundsResource` | Create and verify refunds. | Decide refund eligibility or update accounting records. |
 | `MetadataResource` | Retrieve banks and supported currencies. | Cache globally without caller control. |
 | `WebhooksResource` | Verify signatures and parse verified payloads. | Deduplicate events or acknowledge HTTP responses. |
 | `FetchTransport` | Execute exactly one authenticated HTTP attempt and return raw status, headers, bytes, and duration. | Retry requests, interpret payment state, or log bodies. |
@@ -368,7 +366,6 @@ export class AppModule {}
 ```ts
 export class ChapaService {
   readonly payments: ChapaPayments;
-  readonly refunds: ChapaRefunds;
   readonly metadata: ChapaMetadata;
   readonly webhooks: ChapaWebhooks;
   readonly references: ChapaReferences;
@@ -402,10 +399,10 @@ interface ChapaPayments {
 |---|---|---|---|
 | `amount` | `string` | Yes | Positive decimal string. Never converted to JavaScript number. |
 | `currency` | `string` | Yes | Non-empty uppercase currency code; optional live validation against metadata is caller-controlled. |
-| `txRef` | `string` | Yes | Mapped to `tx_ref`. Non-empty, bounded length after sandbox confirmation. |
-| `firstName` | `string` | Documentation-dependent | Mapped to `first_name`. Empty strings rejected when provided. |
-| `lastName` | `string` | Documentation-dependent | Mapped to `last_name`. Empty strings rejected when provided. |
-| `email` | `string` | Documentation-dependent | Valid email when provided. |
+| `txRef` | `string` | Yes | Mapped to `tx_ref`; must match `^[A-Za-z0-9_]{1,50}$`. This is a conservative SDK policy, not Chapa's complete grammar. |
+| `firstName` | `string` | No | Optional for the version-1 hosted initialization API; mapped to `first_name` and non-empty when provided. This does not claim optionality for every Chapa flow. |
+| `lastName` | `string` | No | Optional for the version-1 hosted initialization API; mapped to `last_name` and non-empty when provided. This does not claim optionality for every Chapa flow. |
+| `email` | `string` | No | Optional for the version-1 hosted initialization API; valid when provided. |
 | `phoneNumber` | `string` | No | Mapped to `phone_number`. Current hosted-payment documentation requires ten digits when supplied. |
 | `callbackUrl` | `string` | No | Absolute HTTPS URL in production. HTTP permitted only when explicitly enabled for local testing. |
 | `returnUrl` | `string` | No | Absolute URL. |
@@ -420,13 +417,13 @@ interface InitializePaymentResult {
   status: string;
   message?: string;
   checkoutUrl: string;
-  transactionReference: string;
+  txRef: string;
   response: ChapaResponseMetadata;
   raw: unknown;
 }
 ```
 
-The checkout URL is mandatory for a successful normalized result. If the HTTP response is successful but the URL is missing or unusable, the SDK throws `ChapaResponseError` and preserves the raw body.
+The checkout URL is mandatory for a successful normalized result. `txRef` is the exact merchant reference supplied to initialize and is an SDK-owned echo of that request identity; it is not a newly inferred provider-generated Chapa reference. If the HTTP response is successful but the URL is missing or unusable, the SDK throws `ChapaResponseError` and preserves the raw body.
 
 ### 8.3.3 `VerifyPaymentResult`
 
@@ -443,7 +440,6 @@ type PaymentStatus =
 interface VerifyPaymentResult {
   status: PaymentStatus;
   txRef: string;
-  chapaReference?: string;
   amount?: string;
   charge?: string;
   currency?: string;
@@ -458,78 +454,28 @@ interface VerifyPaymentResult {
 
 Unknown future statuses are normalized to `unknown` while the original value remains available in `raw`. This prevents minor API additions from crashing consumers while preserving exhaustiveness for known states.
 
+Payment business state comes only from a usable provider transaction-status field such as `data.status`. HTTP status, top-level Chapa envelope status, and English messages are not payment status. One untouched Test Mode transaction returned HTTP 200 and top-level success while `data.status` remained `pending`. If the required transaction status is absent or unusable, the SDK throws `ChapaResponseError` and preserves redacted raw material.
+
+Provider monetary values require lexical precision. A JSON numeric `amount` or `charge` must not be normalized with `String(number)` or another ordinary IEEE-754 parse/stringify round trip. An optional normalized monetary string may be populated only when the implementation preserves and validates the exact decimal lexical value from response bytes without precision loss. Otherwise it is omitted; raw is preserved, and digits are never rounded or invented. This requirement selects no parsing dependency.
+
 ### 8.3.4 `CancelPaymentResult`
 
-The cancellation endpoint is documented, but its complete response schema is U-state until M0.5 capture. Version 1 promises only the transaction reference, normalized status when a stable value is present, message when present, response metadata, and raw body.
+Version 1 sends a bodyless `PUT /v1/transaction/cancel/{tx_ref}`. It sends neither JSON `{}` nor any placeholder body. The verified narrow Test Mode result was hosted checkout-link expiration; it did not establish a universal payment-state transition. Post-cancellation verification of the observed transaction remained `pending`.
 
 ```ts
 interface CancelPaymentResult {
   txRef: string;
-  status: PaymentStatus;
   message?: string;
   response: ChapaResponseMetadata;
   raw: unknown;
 }
 ```
 
-## 8.4 Refunds Resource
+The top-level cancellation-envelope `status` is not mapped to `PaymentStatus`, and the SDK never invents `cancelled`. The observed repeat-cancellation HTTP 400 and unknown-reference HTTP 404 remain generic `ChapaApiError` scenarios without message-derived subclasses. Paid/non-cancellable behavior remains U.
 
-```ts
-interface ChapaRefunds {
-  create(
-    txRef: string,
-    input?: CreateRefundInput,
-    options?: ChapaMutationRequestOptions,
-  ): Promise<CreateRefundResult>;
+## 8.4 Refunds — Deferred from Version 1
 
-  verify(
-    refundReference: string,
-    options?: ChapaSafeReadRequestOptions,
-  ): Promise<VerifyRefundResult>;
-}
-
-interface CreateRefundInput {
-  reason?: string;
-  amount?: string;
-  reference?: string;
-  meta?: Readonly<Record<string, JsonValue>>;
-}
-```
-
-**[REQ-API-02]** Refund requests use `application/x-www-form-urlencoded`. Scalar fields are encoded directly. The exact wire representation of `meta` is U-state and must be fixed by M0.5 fixture evidence before `meta` is enabled in the implementation. Amount remains a decimal string. The SDK does not determine refund eligibility or merchant balance.
-
-### 8.4.1 Refund Status
-
-```ts
-type RefundStatus =
-  | 'initiated'
-  | 'processing'
-  | 'refunded'
-  | 'reversed'
-  | 'unknown';
-
-interface CreateRefundResult {
-  txRef: string;
-  refundReference?: string;
-  status: RefundStatus;
-  message?: string;
-  response: ChapaResponseMetadata;
-  raw: unknown;
-}
-
-interface VerifyRefundResult {
-  refundReference: string;
-  txRef?: string;
-  status: RefundStatus;
-  amount?: string;
-  currency?: string;
-  reason?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  response: ChapaResponseMetadata;
-  raw: unknown;
-}
-```
+**[REQ-API-02]** Version 1 **MUST NOT** expose enabled provider refund create/verify methods or normalized refund contracts. Refund target identity, eligibility, request fields, `meta` encoding, result shapes, lifecycle/status, and verification contract remain U. Documentation and local form-encoding work do not authorize implementation. Refund support requires a separately approved provider-evidence milestone and specification revision.
 
 ## 8.5 Metadata Resource
 
@@ -542,11 +488,10 @@ interface ChapaMetadata {
 interface ChapaBank {
   id?: string | number;
   name: string;
-  code?: string | number;
+  slug?: string;
   swift?: string;
   accountLength?: number;
   currency?: string;
-  isMobileMoney?: boolean;
   raw: unknown;
 }
 
@@ -557,9 +502,8 @@ interface ListBanksResult {
 }
 
 interface ChapaCurrency {
-  code?: string;
-  name?: string;
-  numericCode?: string;
+  providerCode: number;
+  name: string;
   raw: unknown;
 }
 
@@ -570,13 +514,15 @@ interface ListCurrenciesResult {
 }
 ```
 
+Bank `slug`, `swift`, `acct_length`, and `currency` map only to their distinctly named public fields. Integer/null flag-like wire fields remain in `raw`; version 1 does not coerce them to booleans. Currency normalization pairs `currency_code[i]` with `currency_name[i]`. Both arrays must exist, have equal length, and contain usable numbers and strings respectively; otherwise the SDK throws `ChapaResponseError` and preserves raw. `providerCode` is a provider numeric identifier, not an ISO textual currency code. Membership and live parity are not promised.
+
 **[REQ-API-03]** The SDK maintains no hidden process-global cache. Metadata cache ownership, duration, invalidation, and persistence belong to the host application. Any future cache adapter requires a separate ADR.
 
 ## 8.6 Webhooks Resource
 
 ```ts
 interface VerifyWebhookInput {
-  rawBody: Buffer | Uint8Array | string;
+  rawBody: Buffer | Uint8Array;
   headers: Readonly<Record<string, string | readonly string[] | undefined>>;
   secret?: string;
 }
@@ -584,19 +530,29 @@ interface VerifyWebhookInput {
 interface ChapaWebhookEventBase {
   event: string;
   txRef?: string;
-  chapaReference?: string;
   status?: string;
   amount?: string;
   currency?: string;
   raw: unknown;
 }
 
+interface ChapaChargeSuccessWebhookEvent extends ChapaWebhookEventBase {
+  event: 'charge.success';
+  status: 'success';
+}
+
+interface ChapaUnknownWebhookEvent extends ChapaWebhookEventBase {
+  event: string;
+}
+
+type ChapaKnownWebhookEvent = ChapaChargeSuccessWebhookEvent;
+
 type ChapaWebhookEvent =
   | ChapaKnownWebhookEvent
   | ChapaUnknownWebhookEvent;
 
 interface VerifiedWebhook<T extends ChapaWebhookEvent = ChapaWebhookEvent> {
-  verifiedBy: 'x-chapa-signature' | 'chapa-signature';
+  verifiedBy: 'x-chapa-signature';
   event: T;
   rawBody: Buffer;
   signature: string;
@@ -606,6 +562,8 @@ interface ChapaWebhooks {
   verify(input: VerifyWebhookInput): VerifiedWebhook;
 }
 ```
+
+Only exact `charge.success` with `status = 'success'` enters the frozen known variant. Every unsupported event, status, or shape enters `ChapaUnknownWebhookEvent`, which preserves usable common fields and `raw` without promising an unobserved provider shape. `VerifiedWebhook.signature` is the validated `x-chapa-signature` (X1) value; it never refers to C1, and C1 is not exposed as an independent verifier.
 
 **[REQ-API-04]** Test-signature generation is excluded from `ChapaService`. The `./testing` subpath may export `generateChapaTestSignature()` only for signature algorithms confirmed by reproducible M0.5 vectors.
 
@@ -623,7 +581,7 @@ interface ChapaReferences {
 }
 ```
 
-**[REQ-API-05]** Reference generation uses cryptographically secure randomness. The SDK does not guarantee global uniqueness; the host application must enforce uniqueness where its business workflow requires it.
+**[REQ-API-05]** Reference generation uses cryptographically secure randomness and always produces a value matching `^[A-Za-z0-9_]{1,50}$`. Prefix, separator, generated body, and total output must remain within that alphabet and the 50-character total limit; impossible configurations fail validation. The exact tested 50-character provider value was accepted and the exact tested 51-character value was rejected, but this SDK grammar is deliberately conservative and is not claimed to be Chapa's complete grammar. The SDK does not guarantee global uniqueness; the host application must enforce workflow uniqueness.
 
 ## 8.8 Per-request Options
 
@@ -659,8 +617,6 @@ type ChapaOperation =
   | 'payments.initialize'
   | 'payments.verify'
   | 'payments.cancel'
-  | 'refunds.create'
-  | 'refunds.verify'
   | 'metadata.listBanks'
   | 'metadata.listCurrencies';
 
@@ -672,11 +628,10 @@ interface ChapaResponseMetadata {
   attempts: number;
   durationMs: number;
   correlationId?: string;
-  requestId?: string;
 }
 ```
 
-**[REQ-API-07]** Response metadata contains allowlisted operational fields only. It does not expose authorization, signatures, unrestricted headers, request bodies, or response bodies.
+**[REQ-API-07]** Response metadata contains allowlisted operational fields only. `correlationId` is caller/SDK-controlled metadata originating from request options. Version 1 exposes no provider `requestId` mapping: observed `x-amzn-requestid` and `x-amzn-trace-id` header names do not establish stable Chapa semantics. Metadata does not expose authorization, signatures, unrestricted headers, request bodies, or response bodies.
 
 # 9. Configuration Contract
 
@@ -782,7 +737,7 @@ The executor reads and parses the body once. The transport must not retry, deser
 - **[REQ-NET-02]** `Authorization: Bearer <secretKey>` on authenticated API requests.
 - **[REQ-NET-03]** `Accept: application/json`.
 - **[REQ-NET-04]** `Content-Type: application/json` for normal API bodies.
-- **[REQ-NET-05]** `Content-Type: application/x-www-form-urlencoded` for refund creation.
+- **[REQ-NET-05]** Version 1 sends no provider refund request. Any future form-encoded refund transport requires the separately approved evidence milestone and specification revision required by REQ-API-02.
 - **[REQ-NET-06]** `User-Agent` identifies the package name and version without exposing application secrets.
 - **[REQ-NET-07]** Correlation identifiers are included only in SDK logs and hooks unless Chapa documents a supported request header.
 
@@ -813,7 +768,7 @@ The executor reads and parses the body once. The transport must not retry, deser
 
 ### 10.6.1 Duplicate Transaction References
 
-**[REQ-NET-11]** M0.5 must call initialization twice with the same `txRef` and capture the exact second response. No `ChapaDuplicateTransactionReferenceError` is included until a stable machine-readable signal or reliably documented status is confirmed. Human-message matching alone is not a sufficient public contract. Until then, collisions remain `ChapaApiError` with preserved redacted metadata.
+**[REQ-NET-11]** The M0.5 duplicate initialization attempt occurred, but its response contract was not safely retained; the duplicate discriminator remains U. Version 1 has no `ChapaDuplicateTransactionReferenceError`. Duplicate/collision responses remain `ChapaApiError` with preserved redacted metadata unless a future approved evidence and specification change establishes a stable machine-readable signal. Initialization has zero automatic retries, and no replay semantics may be inferred.
 
 > **Uncertain Initialization Result**
 >
@@ -821,7 +776,7 @@ The executor reads and parses the body once. The transport must not retry, deser
 
 ## 10.7 Verification Business States Returned as HTTP Errors
 
-**[REQ-NET-12]** Chapa documents an unpaid transaction through HTTP 404, but the stable response discriminator and test/live parity remain unverified. Normalize that response to `pending` only when M0.5 confirms an exact discriminator. Treat every other 404 as `ChapaApiError`. Never infer payment state from status code alone.
+**[REQ-NET-12]** M0.5 did not establish a stable unpaid-404 discriminator. Every version-1 HTTP 404 is therefore a `ChapaApiError`; no 404 is normalized to `pending`. Payment state is derived only from a usable transaction-status body field, never from HTTP status, top-level envelope status, or an English message. A future discriminator requires new approved evidence and a specification change.
 
 ## 10.8 Response Handling
 
@@ -835,17 +790,17 @@ The executor reads and parses the body once. The transport must not retry, deser
 
 ## 11.1 Request Validation
 
-**[REQ-DATA-01]** All public inputs receive compile-time TypeScript types and internal Zod runtime validation. Validation occurs before the transport is called. Validation failures throw `ChapaValidationError` with SDK-owned issue details; Zod classes and issue types are not exposed as public API.
+**[REQ-DATA-01]** All public inputs receive compile-time TypeScript types and internal Zod runtime validation. Validation occurs before the transport is called. Every caller-supplied version-1 `txRef` must match `^[A-Za-z0-9_]{1,50}$`; this is conservative SDK policy rather than a complete provider-grammar claim. Validation failures throw `ChapaValidationError` with SDK-owned issue details; Zod classes and issue types are not exposed as public API.
 
 ## 11.2 Money
 
-**[REQ-DATA-02]** Amounts and charges are represented as decimal strings throughout the public API. The package never converts monetary values to IEEE-754 numbers and performs no currency arithmetic. The initial candidate grammar rejects signs, exponent notation, commas, whitespace, empty values, zero, and negative values; accepted scale, leading-zero rules, and maximum digits remain M0.5 evidence questions.
-
-Candidate only - not frozen until M0.5:
+**[REQ-DATA-02]** Public payment input amounts are positive decimal strings matching the following version-1 SDK grammar:
 
 ```regex
 ^(?:[1-9]\d*(?:\.\d{1,2})?|0\.\d{1,2})$
 ```
+
+The represented decimal value must additionally be greater than zero, determined without conversion through JavaScript `Number`. Signs, exponent notation, commas, whitespace, empty strings, integer leading zeros, more than two fractional digits, zero forms (`0`, `0.0`, `0.00`), and negative values are rejected. Public money is never converted to IEEE-754 number and the SDK performs no currency arithmetic. This is a deliberate SDK safety policy, not a claim about Chapa's complete amount grammar; M0.5 established no provider maximum.
 
 ## 11.3 Dates
 
@@ -893,7 +848,6 @@ interface ChapaErrorDetails {
   httpStatus?: number;
   chapaStatus?: string;
   chapaMessage?: string;
-  requestId?: string;
   correlationId?: string;
   attempts?: number;
   retryable: boolean;
@@ -920,7 +874,7 @@ interface ChapaErrorDetails {
 
 ### 12.3.1 Provider-specific Error Reasons
 
-**[REQ-ERR-01]** A dedicated duplicate-reference error or normalized API reason is added only after M0.5 demonstrates a stable discriminator. The SDK must not classify critical payment errors using loose English-message matching. Unknown provider failures remain `ChapaApiError` with redacted raw evidence.
+**[REQ-ERR-01]** Version 1 has no dedicated duplicate-reference or cancellation-state error because M0.5 established no stable machine-readable discriminator. The SDK must not classify critical payment errors using loose English-message matching. Duplicate/collision, repeat-cancellation, unknown-cancellation, and unknown provider failures remain `ChapaApiError` with redacted raw evidence unless a future approved evidence/specification change establishes a stable signal.
 
 ## 12.4 Framework Independence
 
@@ -930,17 +884,24 @@ interface ChapaErrorDetails {
 
 ## 13.1 Verification Requirements
 
-- **[REQ-WH-01]** Signature verification **MUST** use the exact raw body bytes (`Buffer` or `Uint8Array`). Re-serialized JSON is prohibited.
+- **[REQ-WH-01]** Verification **MUST** consume exact original request bytes as `Buffer` or `Uint8Array`; strings and re-serialized JSON are prohibited.
 - **[REQ-WH-02]** Header lookup **MUST** be case-insensitive.
-- **[REQ-WH-03]** The verifier **MUST** recognize `x-chapa-signature` and `chapa-signature`.
-- **[REQ-WH-04]** Digest comparison **MUST** use `crypto.timingSafeEqual()` over equal-length HMAC-SHA256 byte sequences.
-- **[REQ-WH-05]** The verifier **MUST** reject missing, malformed, incorrectly sized, or invalid signatures.
-- **[REQ-WH-06]** JSON parsing **MUST** occur only after signature verification succeeds.
-- **[REQ-WH-07]** The result **MUST** identify the signature header that verified the event.
+- **[REQ-WH-03]** `x-chapa-signature` (X1) is the required payload-integrity header. `chapa-signature` (C1) is recognized only as an optional secondary secret/configuration-consistency signal.
+- **[REQ-WH-04]** Each checked HMAC digest **MUST** be compared with `crypto.timingSafeEqual()` after an equal-length 32-byte guard.
+- **[REQ-WH-05]** Each supplied signature must match `^[0-9A-Fa-f]{64}$`, decode to 32 bytes, and validate. Missing or invalid X1 rejects. Absent C1 is allowed after valid X1; supplied malformed, wrong-sized, or invalid C1 rejects fail-closed. Base64 is not accepted. Uppercase hex acceptance is SDK decoder robustness, not a provider-emission claim.
+- **[REQ-WH-06]** JSON parsing **MUST NOT** occur until required X1 verification and any supplied C1 validation succeed.
+- **[REQ-WH-07]** Every successful result identifies `verifiedBy: 'x-chapa-signature'`. C1 never independently verifies an event and cannot rescue missing or failed X1.
 
 ## 13.2 Signature Ambiguity Gate
 
-**[REQ-WH-08]** Chapa clearly documents `x-chapa-signature` as a payload signature. Its wording for `chapa-signature` is ambiguous. M0.5 must capture original raw bytes, both header values, configured secrets, and encoding observations. `x-chapa-signature` may ship after a valid vector is reproduced. `chapa-signature` ships only if its algorithm is independently reproduced; otherwise it remains unsupported and documented as such.
+**[REQ-WH-08]** M0.5 verified, for the observed Test Mode configuration, X1 as `HMAC-SHA256(key = UTF8(webhookSecret), message = exact original rawBody bytes)` and C1 as `HMAC-SHA256(key = UTF8(webhookSecret), message = UTF8(webhookSecret))`; provider emission was lowercase 64-character hexadecimal. C1 contains no payload bytes, provides no payload integrity, per-event freshness, or replay resistance, and **MUST NOT** authorize parsing or acceptance or be described as a payload signature. Provider both-header priority/conflict semantics and canonicalization remain U; the fail-closed rules above are deliberate SDK security policy.
+
+| X1 primary | C1 secondary | Version-1 result |
+|---|---|---|
+| Valid | Absent | Accept, parse, and return `verifiedBy = 'x-chapa-signature'`. |
+| Valid | Valid | Accept, parse, and return X1 as verifier; C1 confirms secondary consistency only. |
+| Valid | Malformed, wrong-sized, or invalid | Reject fail-closed. |
+| Missing, malformed, wrong-sized, or invalid | Any state | Reject; C1 can never rescue X1. |
 
 ## 13.3 NestJS Express Example
 
@@ -972,11 +933,11 @@ handleWebhook(@Req() req: RawBodyRequest<Request>) {
 - **[REQ-WH-11]** Return HTTP 200 after the event has been durably accepted according to the application's architecture.
 - **[REQ-WH-12]** Re-query the verification endpoint before delivering value on a successful payment notification.
 - **[REQ-WH-13]** Compare `txRef`, amount, currency, mode, and expected order identity before fulfilment.
-- **[REQ-WH-14]** Handle out-of-order, repeated, delayed, failed, cancelled, reversed, and refund events.
+- **[REQ-WH-14]** Handle out-of-order, repeated, delayed, and unknown events without assuming unverified event shapes; host applications retain idempotency responsibility.
 
 ## 13.6 Event Types
 
-**[REQ-WH-15]** Version 1 models documented transaction and refund webhook events as discriminated unions. Preserve unknown event names through `ChapaUnknownWebhookEvent` with the event name, common fields, and raw payload.
+**[REQ-WH-15]** Version 1 freezes a known typed provider variant only for the observed `charge.success` event with `status = 'success'`. Other documented but unverified names, statuses, and shapes use `ChapaUnknownWebhookEvent`, preserving the event name and common safe fields where usable plus the raw payload. New typed variants require approved evidence and a specification revision.
 
 # 14. Logging and Observability
 
@@ -1043,36 +1004,25 @@ interface ChapaInstrumentationHooks {
 
 ## 16.1 M0.5 Chapa Contract-Verification Gate
 
-**[REQ-TEST-01]** M0.5 occurs before production package implementation. It may use direct HTTP probes, `curl`, Postman, or disposable scripts, but must not use production package code. The purpose is to observe Chapa rather than validate the implementation.
+**[REQ-TEST-01]** M0.5 used disposable research tooling rather than production package code to observe Chapa. Its final evidence states and deferrals are recorded in `docs/contracts/2026-08-25-m0.5-contract-freeze-proposal.md`; F7 closeout is complete, while M1 authorization remains pending M0.5-F PR merge and post-merge verification.
 
-| Operation or scenario | Minimum observation | Blocking question |
+| Operation or scenario | Frozen M0.5 outcome | Version-1 consequence |
 |---|---|---|
-| Initialize payment | Success, invalid input, timeout simulation where feasible | Required identity fields and stable success/error fields |
-| Duplicate `txRef` | Second initialize call with identical merchant reference | HTTP status, body, and stable collision discriminator |
-| Verify payment | Success, unpaid/pending, failed, unknown reference | Whether a specific 404 can be normalized to pending |
-| Cancel transaction | Success, already paid, already cancelled, unknown reference | Request body and result/error shapes |
-| Refund | Full, partial, invalid amount, duplicate refund reference | Status fields and `meta` form encoding |
-| Metadata | Banks and supported currencies | Stable list and item shapes |
-| Webhooks | Original bytes, headers, secrets, valid/invalid vectors | Exact algorithms, encodings, and event payloads |
+| Initialize payment | Selected hosted-flow, txRef-boundary, and exact amount observations adjudicated V | Scoped optional identity; conservative txRef/money policies |
+| Duplicate `txRef` | Attempt occurred; response contract unavailable and U | Generic `ChapaApiError`; no replay or dedicated discriminator |
+| Verify payment | Exact body-status `pending` lifecycle adjudicated V; unpaid-404/general unknown remains U | State comes from usable body status; arbitrary 404 is API error |
+| Cancel transaction | Bodyless link-expiration and exact error scenarios adjudicated V; universal state/paid behavior U | Bodyless PUT and minimal result; no invented cancelled state |
+| Refund | Provider contract remained U and was not executed | Excluded from version 1 |
+| Metadata | Banks and currency parallel-array shapes adjudicated V | Evidence-honest shapes with raw preservation |
+| Webhooks | X1/C1 constructions, encoding, both-presence, and one event shape adjudicated V; conflict/canonicalization U | Required X1, secondary C1, fail-closed policy, unknown events |
 
 ### 16.1.1 Fixture Requirements
 
-**[REQ-TEST-02]** Each sanitized fixture records operation, case name, test-mode environment, capture date, HTTP method/path, status, allowlisted headers, exact sanitized body, evidence state, expected normalization, and unresolved observations. Secrets, signatures tied to live secrets, personal data, and real account identifiers are never committed.
+**[REQ-TEST-02]** A committed sanitized JSON fixture and its Appendix F manifest entry collectively establish provenance. The fixture preserves the reviewed provider shape/body and retained operation metadata; retained safe header-name evidence may also remain in the fixture where available. Its linked manifest entry records canonical fixture identity, operation, case name, Test Mode environment, retained day-level evidence date, HTTP method/path/status, D/V/U state, supported claims, and unresolved claims. File existence is not evidence, and fixture-to-manifest linkage must remain valid. Adjudicated C/D/E non-fixture observations remain in the contract-freeze matrix rather than being fabricated as fixtures. Secrets, signatures tied to live secrets, personal data, and real account identifiers are never committed.
 
-```text
-test/fixtures/chapa/
-|-- manifest.json
-|-- payments/
-|   |-- initialize-success.json
-|   |-- initialize-duplicate-tx-ref.json
-|   `-- verify-unpaid.json
-|-- cancellation/
-|-- refunds/
-|-- metadata/
-`-- webhooks/
-```
+The Appendix F fixture manifest contains the three actual M0.5-B JSON fixtures. Adjudicated C/D/E sanitized observations are indexed in the approved contract-freeze matrix rather than misrepresented as fixtures.
 
-**[REQ-TEST-03]** M0.5 exit condition: every version 1.0 operation is V-state for its safety-critical fields, or the unresolved operation/field is explicitly deferred. Production package code begins only after this decision is recorded.
+**[REQ-TEST-03]** M0.5 closes only through F7 after every shipped safety-critical contract has sufficient D/V authority or is explicitly constrained, deferred, excluded, or fail-closed. Refunds are excluded rather than treated as a missing version-1 fixture. F7 recorded final alignment; production package work remains unauthorized until the coherent M0.5-F PR is merged, the merged `main` state is verified, and M1 is separately authorized.
 
 ## 16.2 Test Layers
 
@@ -1089,17 +1039,17 @@ test/fixtures/chapa/
 ## 16.3 Mandatory Failure Tests
 
 - **[REQ-TEST-04]** Initialization timeout does not trigger a second POST.
-- **[REQ-TEST-05]** Refund timeout does not trigger a second POST.
+- **[REQ-TEST-05]** Version-1 public exports and operation schemas contain no enabled provider refund create/verify contract.
 - **[REQ-TEST-06]** Safe GET retries once on eligible 503 and records two attempts.
 - **[REQ-TEST-07]** 401 and 400 are never retried.
 - **[REQ-TEST-08]** Caller abort is distinguished from timeout.
 - **[REQ-TEST-09]** Malformed successful response throws `ChapaResponseError` with redacted raw data.
-- **[REQ-TEST-10]** Both valid and invalid webhook signatures use exact raw bytes.
-- **[REQ-TEST-11]** JSON reformatting changes the payload signature and is rejected.
+- **[REQ-TEST-10]** Valid and invalid X1 tests operate on exact raw bytes. C1 tests reproduce the frozen secret-on-secret construction separately; valid C1 never substitutes for X1 payload verification.
+- **[REQ-TEST-11]** JSON reformatting changes the X1 payload-signature input, and the mutated or reconstructed payload must fail X1 verification.
 - **[REQ-TEST-12]** Secrets and personal data never appear in logger snapshots.
-- **[REQ-TEST-13]** Unknown payment, refund, and webhook event statuses remain accessible without unsafe coercion.
-- **[REQ-TEST-14]** Duplicate `txRef` fixtures map only to evidence-supported behaviour and never trigger an automatic second initialization.
-- **[REQ-TEST-15]** A documented unpaid 404 is normalized only when its exact captured discriminator matches; unrelated 404 responses throw `ChapaApiError`.
+- **[REQ-TEST-13]** Unknown payment statuses and webhook event names/statuses remain accessible without unsafe coercion.
+- **[REQ-TEST-14]** Duplicate `txRef` responses remain generic `ChapaApiError` and never trigger an automatic second initialization.
+- **[REQ-TEST-15]** Every verification HTTP 404 throws `ChapaApiError`; no HTTP status alone is normalized to `pending`.
 - **[REQ-TEST-16]** Mutation request option schemas reject `maxRetries` supplied through untyped JavaScript.
 - **[REQ-TEST-17]** The root export does not expose `ChapaClient`, internal schemas, or the request executor.
 
@@ -1165,7 +1115,7 @@ test/fixtures/chapa/
 - **[REQ-PKG-19]** Documentation examples compile.
 - **[REQ-PKG-20]** Changeset and changelog are present.
 - **[REQ-PKG-21]** Release candidate has completed sandbox smoke testing.
-- **[REQ-PKG-22]** The endpoint evidence matrix contains no U-state safety-critical field for a shipped version 1.0 operation.
+- **[REQ-PKG-22]** Every shipped version-1 safety-critical contract has sufficient D/V authority or an explicit constraint, deferral, exclusion, or fail-closed rule recorded by the M0.5 freeze.
 - **[REQ-PKG-23]** Published package identity and README clearly state community ownership and NestJS focus.
 
 # 18. Documentation Requirements
@@ -1175,15 +1125,15 @@ test/fixtures/chapa/
 - **[REQ-DOC-01]** Installation and supported-version matrix.
 - **[REQ-DOC-02]** Synchronous and asynchronous configuration.
 - **[REQ-DOC-03]** Initialize, redirect, callback, verify, and fulfilment flow.
-- **[REQ-DOC-04]** Cancellation flow and its irreversible nature.
-- **[REQ-DOC-05]** Full and partial refund flow plus refund status tracking.
+- **[REQ-DOC-04]** Cancellation documentation explains the bodyless hosted-checkout cancellation flow, observed checkout-link expiration, and the explicit limitation that cancellation does not establish a universal transaction-state transition.
+- **[REQ-DOC-05]** Version-1 scope documentation explicitly states that provider refund creation and verification are deferred pending a separate evidence milestone and specification revision.
 - **[REQ-DOC-06]** Express and Fastify raw-body webhook setup.
 - **[REQ-DOC-07]** Error handling and retry semantics.
 - **[REQ-DOC-08]** Testing with a mocked transport and webhook signatures.
 - **[REQ-DOC-09]** Security checklist for production deployment.
 - **[REQ-DOC-10]** Every breaking release must include explicit version-upgrade guidance.
 - **[REQ-DOC-11]** Contract-evidence guide documenting fixture provenance, sanitization, and known test/live limitations.
-- **[REQ-DOC-12]** Duplicate `txRef` and uncertain-timeout recovery guide based only on verified provider behaviour.
+- **[REQ-DOC-12]** Duplicate `txRef` and uncertain-timeout recovery guidance follows the adjudicated deferral: no dedicated duplicate discriminator, no automatic replay, and no claim beyond retained evidence.
 
 ## 18.2 Documentation Rules
 
@@ -1264,12 +1214,12 @@ nestjs-chapa/
 | Milestone | Deliverable | Exit condition |
 |---|---|---|
 | M0 - Specification | Approved architecture, public boundary, preliminary endpoint matrix, open-question register. | Repository and M0.5 research may proceed. |
-| M0.5 - Contract verification | Direct provider probes, sanitized fixture pack, evidence-state updates, duplicate-reference and webhook vectors. | Every shipped safety-critical field is V-state or explicitly deferred; no production package code yet. |
+| M0.5 - Contract verification | Completed A-F evidence inventory, adjudication, fixture manifest, contract matrix, and normative freeze. | F7 final alignment and raw-evidence disposition are complete; merge and post-merge verification gate M1 authorization. |
 | M1 - Repository foundation | Governance files, package skeleton, CI, build proof, release preview, and contributor workflow. | Packed empty library installs in ESM/CJS Nest consumers; governance and package identity are confirmed. |
 | M2 - Core infrastructure | Configuration, one-attempt transport, request executor, errors, validation, logging, safe-read retry engine. | Failure-mode and public-boundary tests pass. |
-| M3 - Payments | Initialize, verify, cancel, references. | V-state fixtures and documented recovery flows pass. |
-| M4 - Refunds and metadata | Create/verify refunds, banks, currencies. | Encoding, normalization, and status tests pass. |
-| M5 - Webhooks | Raw-body verification, event parsing, Express/Fastify examples. | Captured valid and invalid Chapa vectors pass. |
+| M3 - Payments | Initialize, verify, cancel, references. | Evidence-backed contract tests and documented recovery flows pass against the frozen D/V/U contract. |
+| M4 - Metadata | Banks and supported currencies. | Evidence-honest normalization and failure tests pass. |
+| M5 - Webhooks | Raw-body verification, event parsing, Express/Fastify examples. | M0.5-reproduced provider-derived X1/C1 vectors and deterministic invalid/mutation vectors pass. |
 | M6 - Release candidate | Docs, consumer tests, security review, protected sandbox smoke. | 0.x release candidate published with provenance. |
 | M7 - Stable 1.0 | Public npm and GitHub release. | All acceptance criteria satisfied. |
 
@@ -1281,12 +1231,12 @@ nestjs-chapa/
 - **[AC-FUNC-02]** All version 1.0 operations call the documented method, path, authentication, and body encoding.
 - **[AC-FUNC-03]** Payment initialization returns a normalized checkout URL and preserves the raw response.
 - **[AC-FUNC-04]** Verification returns known statuses and safely preserves unknown statuses.
-- **[AC-FUNC-05]** Cancellation is implemented only after the test-mode request and response are captured.
-- **[AC-FUNC-06]** Refund creation uses form encoding and refund verification models documented states.
+- **[AC-FUNC-05]** Cancellation sends a bodyless `PUT /v1/transaction/cancel/{tx_ref}` and returns only txRef, optional message, response metadata, and raw; it does not invent a transaction state.
+- **[AC-FUNC-06]** Version 1 excludes enabled provider refund creation, verification, inputs, and normalized results pending a future approved evidence milestone and specification revision.
 - **[AC-FUNC-07]** Bank and currency retrieval are typed and retry-safe.
-- **[AC-FUNC-08]** Webhook verification works from exact raw bytes for documented signature modes confirmed by test vectors.
-- **[AC-FUNC-09]** The M0.5 fixture manifest identifies every shipped Chapa-dependent contract as D or V, and every safety-critical normalized field as V or unambiguously documented.
-- **[AC-FUNC-10]** Duplicate `txRef` behaviour and the unpaid-verification 404 rule are documented from captured evidence; no behaviour is inferred from status code alone.
+- **[AC-FUNC-08]** Webhook verification requires valid X1 over exact raw bytes; absent C1 is allowed after valid X1, supplied invalid C1 rejects, and C1 never verifies payload independently.
+- **[AC-FUNC-09]** Actual JSON fixtures are indexed by Appendix F; adjudicated non-fixture C/D/E evidence is indexed by the approved M0.5 contract-freeze matrix. Every shipped safety-critical contract has sufficient D/V authority or is explicitly constrained/deferred/fail-closed.
+- **[AC-FUNC-10]** Duplicate `txRef` discrimination and unpaid-404 normalization remain explicitly deferred: duplicates use generic `ChapaApiError`, arbitrary 404 is an API error, and no payment state is inferred from HTTP status.
 
 ## 21.2 Reliability
 
@@ -1320,25 +1270,26 @@ nestjs-chapa/
 
 # 22. Risks and Open Questions
 
-| ID | Question or risk | Resolution required before |
-|---|---|---|
-| OQ-01 | Exact algorithm, encoding, and configured secret for `chapa-signature` versus `x-chapa-signature`. | M0.5 webhook probe and M5. |
-| OQ-02 | Complete cancellation request, success, invalid-state, and unknown-reference shapes. | M0.5 and cancellation implementation. |
-| OQ-03 | Required versus optional identity fields for hosted initialization across test/live modes. | M0.5 and `InitializePaymentInput` freeze. |
-| OQ-04 | Stable maximum lengths and accepted character sets for `txRef` and refund reference. | M0.5 schema finalization. |
-| OQ-05 | Exact response shape and semantics of supported currencies. | M0.5 metadata probe. |
-| OQ-06 | Whether Chapa exposes a stable request identifier header that can be surfaced. | Response metadata finalization. |
-| OQ-07 | Final build tool after proof validates ESM/CJS, declarations, decorators, source maps, and externalized Zod. | M1 repository foundation. |
-| OQ-08 | Exact duplicate `txRef` collision status, body, and stable discriminator. | M0.5 and payment error policy. |
-| OQ-09 | Exact unpaid-verification 404 discriminator and whether it is safe to normalize to `pending`. | M0.5 and verify implementation. |
-| OQ-10 | Accepted amount grammar, decimal scale, leading-zero policy, and maximum digits by supported currency. | M0.5 and money schema freeze. |
-| OQ-11 | Exact `application/x-www-form-urlencoded` representation for refund `meta`. | M0.5 and refund implementation. |
-| OQ-12 | Extent of test-mode/live-mode parity and which production behaviours remain unverified. | Release-candidate documentation. |
-| OQ-13 | Initial maintainer, merge, security-response, and npm release-authority model. | M1 `GOVERNANCE.md` and `MAINTAINERS.md`. |
+| ID | Final M0.5 disposition | Closed boundary | Remaining boundary |
+|---|---|---|---|
+| OQ-01 | PARTIAL | Observed X1/C1 constructions, lower-hex emission, both-header presence, and `charge.success/success` shape | Provider conflict/priority/fallback, universal presence, canonicalization, Base64, other events, live parity remain U |
+| OQ-02 | PARTIAL | Bodyless PUT link-expiration success, post-cancel pending, repeat 400, and unknown-reference 404 exact scenarios | Universal cancelled state, paid/non-cancellable behavior, stable error discriminators, live parity remain U |
+| OQ-03 | PARTIAL | Identity omission for the version-1 hosted initialization flow | Other flows/configurations and live universal optionality remain U |
+| OQ-04 | PARTIAL | Exact tested 50-character acceptance and 51-character rejection | Complete provider grammar, universal boundary, refund target identity, and live parity remain U |
+| OQ-05 | RESOLVED | Test Mode parallel numeric `currency_code` and textual `currency_name` arrays | Permanent membership, malformed/mismatched behavior as provider contract, and live parity are not claimed |
+| OQ-06 | PARTIAL | Safe AWS-looking header names observed | Meaning, uniqueness, stability, and public Chapa request-ID semantics remain U |
+| OQ-07 | DEFERRED TO M1 | None in M0.5 | Final build tool and package-output proof belong to M1 |
+| OQ-08 | DEFERRED | Duplicate attempt occurred | Response/discriminator remains U; generic error and no replay apply |
+| OQ-09 | PARTIAL | Exact B3 rejection and untouched Test Mode `data.status=pending` | Historical unknown-400 retained as U; unpaid-404 discriminator, general nonexistence, live parity remain U |
+| OQ-10 | PARTIAL | Exact core amount outcomes adjudicated V | Lost-raw Part-2 history, complete provider grammar, maximum, arbitrary scale, leading zeros, normalization, live parity remain U; SDK grammar is policy |
+| OQ-11 | DEFERRED | No provider refund contract closed | All provider refund behavior is excluded from version 1 |
+| OQ-12 | DEFERRED | None | Test/live parity remains U |
+
+OQ-13 remains outside M0.5 and belongs to M1 governance and maintainer documentation.
 
 ## 22.1 Risk Controls
 
-- **[REQ-RISK-01]** Capture and version sanitized test-mode fixtures before coding each ambiguous endpoint.
+- **[REQ-RISK-01]** Before coding an ambiguous provider contract, the repository must contain reviewable sanitized Test Mode evidence appropriate to its provenance: either an actual fixture indexed by Appendix F or an adjudicated sanitized provider observation indexed by the M0.5 contract-freeze matrix. Plans and synthetic/local tests alone do not satisfy provider verification, and non-fixture evidence must not be forced into the fixture manifest.
 - **[REQ-RISK-02]** Keep unknown fields in raw responses and unknown enum values in explicit `unknown` states.
 - **[REQ-RISK-03]** Ship alpha releases for consumer testing before stable 1.0.
 - **[REQ-RISK-04]** Document every contract deviation from official Chapa documentation in an ADR and changelog.
@@ -1371,17 +1322,17 @@ nestjs-chapa/
 
 # Appendix A - Endpoint Evidence Matrix
 
-Evidence codes: `A` = accepted architecture decision; `D` = documented; `V` = sandbox-verified fixture; `U` = unresolved/provisional. This matrix must be updated after M0.5.
+Evidence codes: `A` = accepted architecture decision; `D` = documented; `V` = maintainer-adjudicated sanitized Test Mode evidence; `U` = unresolved/provisional. V is scenario-specific and does not imply live parity.
 
 | Operation | Method and path | Body format | Evidence status |
 |---|---|---|---|
-| Initialize payment | `POST /v1/transaction/initialize` | JSON | `[D]` officially documented; M0.5 fixture required for normalized edge cases |
-| Verify payment | `GET /v1/transaction/verify/{tx_ref}` | None | `[D]` officially documented; M0.5 fixture required for normalized edge cases |
-| Cancel transaction | `PUT /v1/transaction/cancel/{tx_ref}` | Documentation-dependent | `[U]` endpoint documented; complete request/response and state errors unresolved |
-| Create refund | `POST /v1/refund/{tx_ref}` | Form URL encoded | `[D]` officially documented; M0.5 fixture required for normalized edge cases |
-| Verify refund | `GET /v1/refund/{ref_id}/verify` | None | `[D]` officially documented; M0.5 fixture required for normalized edge cases |
-| List banks | `GET /v1/banks` | None | `[D]` officially documented; M0.5 fixture required for normalized edge cases |
-| List currencies | `GET /v1/currency_supported` | None | `[U]` endpoint documented; example/item shape inconsistent |
+| Initialize payment | `POST /v1/transaction/initialize` | JSON | `[D/V]` documented endpoint; selected hosted-flow, txRef-boundary, and exact amount observations are V; broader provider grammar/live parity remain U |
+| Verify payment | `GET /v1/transaction/verify/{tx_ref}` | None | `[D/V/U]` documented endpoint and exact body-pending lifecycle V; unpaid-404/general unknown/live behavior U |
+| Cancel transaction | `PUT /v1/transaction/cancel/{tx_ref}` | None | `[V/U]` narrow bodyless Test Mode link-expiration/error scenarios V; universal cancelled state and paid/live behavior U |
+| Create refund | `POST /v1/refund/{identifier}` | Deferred | `[U]` excluded from version 1; target identity and provider contract unresolved |
+| Verify refund | Provider contract unresolved | Deferred | `[U]` excluded from version 1 |
+| List banks | `GET /v1/banks` | None | `[V]` observed Test Mode response shape; temporal membership and live parity not promised |
+| List currencies | `GET /v1/currency_supported` | None | `[V/U]` parallel numeric-code/text-name Test Mode shape V; provider mismatch behavior and live parity U |
 | Transaction list | `GET /v1/transactions` | Query string | `[D]` documented but deferred from version 1.0 |
 | Transaction events | `GET /v1/transaction/events/{ref_id}` | None | `[D]` documented but deferred from version 1.0 |
 | Direct charge | `POST /v1/charges?type={method}` | Method-specific | `[D]` documented but deferred from version 1.0 |
@@ -1391,9 +1342,9 @@ Evidence codes: `A` = accepted architecture decision; `D` = documented; `V` = sa
 
 | Domain | Known values | Unknown handling |
 |---|---|---|
-| Payment verification | `success`, `pending`, `failed`; webhook examples also show `cancelled`, `refunded`, `reversed` | Map unrecognized values to `unknown` and preserve raw value. |
-| Refund verification | `initiated`, `processing`, `refunded`, `reversed` | Map unrecognized values to `unknown` and preserve raw value. |
-| Webhook event names | `charge.success`, `charge.refunded`, `charge.reversed`, `charge.failed/cancelled`; payout events; refund category | Generic unknown event type. |
+| Payment verification | `pending` has V support for the exact untouched Test Mode lifecycle; other listed provider statuses remain D where current documentation supports them | Map unrecognized values to `unknown`, preserve raw, and never derive state from HTTP/envelope/message. Cancellation does not prove `cancelled`. |
+| Refund verification | Not a shipped version-1 normalized contract | Provider refund statuses remain deferred/U. |
+| Webhook event names | `charge.success` with `status = success` is the provider-verified typed variant | Every other documented/unobserved name, status, or shape uses unknown-event handling and preserves raw. |
 
 # Appendix C - Recommended Application Flow
 
@@ -1443,7 +1394,7 @@ Evidence codes: `A` = accepted architecture decision; `D` = documented; `V` = sa
 
 # Appendix F - Contract Fixture Manifest
 
-The manifest is the auditable bridge between provider observations and public SDK contracts. Each entry identifies provenance, sanitization, evidence state, and the normalized rule it supports.
+The contract fixture manifest indexes actual sanitized JSON fixture entries. Each entry identifies provenance, sanitization, evidence state, and the normalized rule it supports. The current M0.5 `test/fixtures/chapa/manifest.json` contains the three B fixtures only. Adjudicated C/D/E sanitized observations are indexed by `docs/contracts/2026-08-25-m0.5-contract-freeze-proposal.md`; they are not falsified as fixture entries.
 
 ```ts
 interface ContractFixtureManifestEntry {
@@ -1463,7 +1414,7 @@ interface ContractFixtureManifestEntry {
 }
 ```
 
-Fixture review requires two checks: no secret or personal data remains, and the fixture actually supports every contract claim listed in `supports`. Fixtures do not prove live-mode parity unless separately identified.
+Fixture review requires two checks: no secret or personal data remains, and the fixture actually supports every contract claim listed in `supports`. File existence is not evidence. Fixtures do not prove live-mode parity. A V claim may instead trace through a human-reviewed sanitized provider observation and explicit maintainer adjudication in the approved contract-freeze matrix; plans and synthetic/local tests alone cannot create V. The Appendix F schema remains fixture-specific and contains no candidate-V state.
 
 # Appendix G - Pre-implementation Decision Summary
 
@@ -1473,12 +1424,14 @@ Fixture review requires two checks: no secret or personal data remains, and the 
 | Repository | `Sye-1321/nestjs-chapa`. |
 | Package | `@sye1321/nestjs-chapa` under the verified `sye1321` npm account. |
 | Core boundary | Framework-independent internally; not a separate public Node.js SDK in version 1. |
-| Provider evidence | Complete M0.5 before production package implementation. |
-| Retries | Safe reads only; no automatic retry for initialization, cancellation, refunds, or future side-effect operations. |
-| Webhooks | Exact raw bytes and timing-safe HMAC; support only algorithms reproduced by fixtures. |
+| Provider evidence | F5 final matrix: 21 V, 9 U, 0 candidate-V; F6 normative changes applied. |
+| Version-1 scope | Hosted initialize, verify, bodyless hosted-checkout cancellation, banks, supported currencies, transaction references, and webhook verification; provider refunds excluded. |
+| M1 readiness | READY WITH EXCLUSIONS; M1 authorization remains pending M0.5-F PR merge and post-merge verification. |
+| Retries | Safe reads only; no automatic retry for initialization, cancellation, or future side-effect operations. |
+| Webhooks | Required X1 over exact raw bytes; optional supplied C1 validates as secondary consistency only; unknown events preserved. |
 | Validation | SDK-owned public contracts with internal Zod; tolerant required-field response parsing. |
 | State ownership | No database, queue, workflow, reconciliation, or exactly-once claim. |
 
 > **Implementation Gate**
 >
-> Repository foundation and M0.5 provider research may proceed. Production payment implementation begins only after the M0.5 exit criteria are met.
+> F7 verified specification/evidence alignment and closed the branch-level M0.5-F review. **M1 is not yet authorized.** The coherent M0.5-F PR must be merged and the merged `main` state verified without discrepancy before M1 becomes eligible for separate explicit authorization.
