@@ -2,6 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import http from 'node:http';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { createHmac } from 'node:crypto';
@@ -40,6 +41,19 @@ function request({ port, method = 'POST', requestPath = receiverPath, headers = 
     req.on('error', reject);
     req.end(body);
   });
+}
+
+function openRawClient(port) {
+  return new Promise((resolve, reject) => {
+    const socket = net.createConnection({ host: '127.0.0.1', port }, () => resolve(socket));
+    socket.once('error', reject);
+  });
+}
+
+function waitForSocketClose(socket) {
+  if (socket.destroyed) return Promise.resolve();
+  socket.resume();
+  return new Promise(resolve => socket.once('close', resolve));
 }
 
 describe('M0.5-E E2 raw capture and headers', () => {
@@ -126,6 +140,28 @@ describe('M0.5-E E2 one-shot receiver', () => {
     await receiver.close();
   });
 
+  test('rejects non-loopback hosts before listening', async () => {
+    for (const host of ['0.0.0.0', '::', '192.168.1.10', '203.0.113.10']) {
+      await assert.rejects(
+        () => startOneShotWebhookReceiver({ host, exactPath: receiverPath, timeoutMs: 1000, maxBodyBytes: 100, captureIdFactory: () => 'never' }),
+        /non-loopback host/
+      );
+    }
+  });
+
+  test('malformed HTTP exercises clientError and destroys only the socket', async t => {
+    const root = await tempRoot(t);
+    const receiver = await startOneShotWebhookReceiver({ exactPath: receiverPath, timeoutMs: 80, maxBodyBytes: 100, rawRoot: root, captureIdFactory: () => 'never' });
+    const socket = await openRawClient(receiver.port);
+    socket.write('INVALID HTTP REQUEST\r\n\r\n');
+    await Promise.race([
+      waitForSocketClose(socket),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('clientError socket remained open')), 300))
+    ]);
+    assert.deepEqual(await receiver.result, { state: 'timeout', captureCount: 0, rejectedCount: 0 });
+    assert.deepEqual(await fs.readdir(root), []);
+  });
+
   test('exact POST/path captures raw invalid JSON without parsing and closes at one', async t => {
     const root = await tempRoot(t);
     const receiver = await startOneShotWebhookReceiver({ exactPath: receiverPath, timeoutMs: 1000, maxBodyBytes: 100, rawRoot: root, captureIdFactory: () => 'one_shot' });
@@ -155,10 +191,51 @@ describe('M0.5-E E2 one-shot receiver', () => {
     assert.equal((await accepted.result).state, 'captured');
 
     const rejectedRoot = await tempRoot(t);
-    const rejected = await startOneShotWebhookReceiver({ exactPath: receiverPath, timeoutMs: 1000, maxBodyBytes: 5, rawRoot: rejectedRoot, captureIdFactory: () => 'over_limit' });
-    assert.equal(await request({ port: rejected.port, body: Buffer.alloc(6) }), 413);
+    const rejected = await startOneShotWebhookReceiver({ exactPath: receiverPath, timeoutMs: 80, maxBodyBytes: 5, rawRoot: rejectedRoot, captureIdFactory: () => 'over_limit' });
+    const status = await request({ port: rejected.port, body: Buffer.alloc(6) }).catch(error => error.code);
+    assert.notEqual(status, 200);
+    assert.ok(status === 413 || ['ECONNRESET', 'EPIPE'].includes(status));
     assert.deepEqual(await fs.readdir(rejectedRoot), []);
-    await rejected.close();
+    assert.deepEqual(await rejected.result, { state: 'timeout', captureCount: 0, rejectedCount: 1 });
+  });
+
+  test('accepted POST that never ends cannot defeat the receiver timeout', async t => {
+    const root = await tempRoot(t);
+    const receiver = await startOneShotWebhookReceiver({ exactPath: receiverPath, timeoutMs: 60, maxBodyBytes: 100, rawRoot: root, captureIdFactory: () => 'partial' });
+    const socket = await openRawClient(receiver.port);
+    socket.write(`POST ${receiverPath} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 20\r\n\r\npartial`);
+    const startedAt = Date.now();
+    const outcome = await Promise.race([
+      receiver.result,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('receiver exceeded bounded timeout')), 400))
+    ]);
+    assert.equal(outcome.state, 'timeout');
+    assert.ok(Date.now() - startedAt < 400);
+    await waitForSocketClose(socket);
+    assert.deepEqual(await fs.readdir(root), []);
+  });
+
+  test('oversized streaming body terminates without waiting for end or creating evidence', async t => {
+    const root = await tempRoot(t);
+    const receiver = await startOneShotWebhookReceiver({ exactPath: receiverPath, timeoutMs: 100, maxBodyBytes: 5, rawRoot: root, captureIdFactory: () => 'oversized_stream' });
+    const socket = await openRawClient(receiver.port);
+    socket.write(`POST ${receiverPath} HTTP/1.1\r\nHost: 127.0.0.1\r\nTransfer-Encoding: chunked\r\n\r\n6\r\n123456\r\n`);
+    await Promise.race([
+      waitForSocketClose(socket),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('oversized socket remained open')), 400))
+    ]);
+    assert.deepEqual(await receiver.result, { state: 'timeout', captureCount: 0, rejectedCount: 1 });
+    assert.deepEqual(await fs.readdir(root), []);
+  });
+
+  test('aborted accepted request creates no evidence and leaves the session bounded', async t => {
+    const root = await tempRoot(t);
+    const receiver = await startOneShotWebhookReceiver({ exactPath: receiverPath, timeoutMs: 80, maxBodyBytes: 100, rawRoot: root, captureIdFactory: () => 'aborted' });
+    const socket = await openRawClient(receiver.port);
+    socket.write(`POST ${receiverPath} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: 20\r\n\r\npartial`);
+    socket.destroy();
+    assert.deepEqual(await receiver.result, { state: 'timeout', captureCount: 0, rejectedCount: 1 });
+    assert.deepEqual(await fs.readdir(root), []);
   });
 
   test('configured bounded capture count closes exactly at the expected count', async t => {

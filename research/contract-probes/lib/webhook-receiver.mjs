@@ -2,6 +2,7 @@ import http from 'node:http';
 import { captureRawWebhook, extractWebhookHeaders } from './webhook-capture.mjs';
 
 const SAFE_PATH = /^\/m05e-[A-Za-z0-9_-]{20,100}$/;
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', '::1', 'localhost']);
 
 export async function startOneShotWebhookReceiver({
   host = '127.0.0.1',
@@ -14,6 +15,7 @@ export async function startOneShotWebhookReceiver({
   captureIdFactory,
   capture = captureRawWebhook
 }) {
+  if (!LOOPBACK_HOSTS.has(host)) throw new Error('Webhook receiver configuration failed: non-loopback host');
   if (!SAFE_PATH.test(exactPath ?? '')) throw new Error('Webhook receiver configuration failed: unsafe exact path');
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1) throw new Error('Webhook receiver configuration failed: invalid timeout');
   if (!Number.isInteger(maxBodyBytes) || maxBodyBytes < 1) throw new Error('Webhook receiver configuration failed: invalid body limit');
@@ -24,8 +26,18 @@ export async function startOneShotWebhookReceiver({
   let rejectedCount = 0;
   let captureInProgress = false;
   let settled = false;
+  let timer;
   let resolveResult;
   const result = new Promise(resolve => { resolveResult = resolve; });
+
+  const finish = (state, { terminateConnections = false } = {}) => {
+    if (settled) return;
+    settled = true;
+    if (timer) clearTimeout(timer);
+    server.close();
+    if (terminateConnections) server.closeAllConnections();
+    resolveResult({ state, captureCount, rejectedCount });
+  };
 
   const server = http.createServer(async (request, response) => {
     if (request.method !== 'POST' || request.url !== exactPath) {
@@ -58,25 +70,33 @@ export async function startOneShotWebhookReceiver({
 
     const chunks = [];
     let size = 0;
-    let oversized = false;
+    let requestFinished = false;
+    const rejectAcceptedRequest = statusCode => {
+      if (requestFinished) return;
+      requestFinished = true;
+      chunks.length = 0;
+      captureInProgress = false;
+      if (!settled) rejectedCount += 1;
+      if (!response.headersSent && !response.destroyed) {
+        response.writeHead(statusCode);
+        response.end();
+        request.socket.destroySoon();
+      } else {
+        request.socket.destroy();
+      }
+    };
     request.on('data', chunk => {
-      if (oversized) return;
+      if (requestFinished) return;
       size += chunk.length;
       if (size > maxBodyBytes) {
-        oversized = true;
-        chunks.length = 0;
+        rejectAcceptedRequest(413);
       } else {
         chunks.push(Buffer.from(chunk));
       }
     });
     request.on('end', async () => {
-      if (oversized) {
-        rejectedCount += 1;
-        response.writeHead(413);
-        response.end();
-        captureInProgress = false;
-        return;
-      }
+      if (requestFinished || settled) return;
+      requestFinished = true;
       try {
         const captureId = captureIdFactory(captureCount);
         await capture({
@@ -90,41 +110,31 @@ export async function startOneShotWebhookReceiver({
         captureCount += 1;
         response.writeHead(200);
         response.end();
-        if (captureCount === expectedCaptureCount && !settled) {
-          settled = true;
-          clearTimeout(timer);
-          server.close(() => resolveResult({ state: 'captured', captureCount, rejectedCount }));
+        if (captureCount === expectedCaptureCount) {
+          finish('captured');
         } else {
           captureInProgress = false;
         }
       } catch {
-        response.writeHead(500);
-        response.end();
-        if (!settled) {
-          settled = true;
-          clearTimeout(timer);
-          server.close(() => resolveResult({ state: 'capture-failure', captureCount, rejectedCount }));
-        }
+        chunks.length = 0;
+        if (!response.headersSent && !response.destroyed) response.writeHead(500);
+        if (!response.destroyed) response.end();
+        finish('capture-failure', { terminateConnections: true });
       }
     });
-    request.on('error', () => {
-      captureInProgress = false;
-      if (!response.headersSent) response.writeHead(400);
-      response.end();
-    });
+    request.on('aborted', () => rejectAcceptedRequest(400));
+    request.on('error', () => rejectAcceptedRequest(400));
   });
 
-  server.on('clientError', socket => socket.destroy());
+  server.on('clientError', (error, socket) => {
+    if (socket && !socket.destroyed) socket.destroy();
+  });
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(port, host, resolve);
   });
   const address = server.address();
-  const timer = setTimeout(() => {
-    if (settled) return;
-    settled = true;
-    server.close(() => resolveResult({ state: 'timeout', captureCount, rejectedCount }));
-  }, timeoutMs);
+  timer = setTimeout(() => finish('timeout', { terminateConnections: true }), timeoutMs);
 
   return {
     host,
@@ -133,10 +143,7 @@ export async function startOneShotWebhookReceiver({
     result,
     close: async () => {
       if (!settled) {
-        settled = true;
-        clearTimeout(timer);
-        await new Promise(resolve => server.close(resolve));
-        resolveResult({ state: 'closed', captureCount, rejectedCount });
+        finish('closed', { terminateConnections: true });
       }
     }
   };
