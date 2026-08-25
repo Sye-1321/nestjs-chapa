@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { buildRefundCreateUrl, buildRefundVerifyUrl, encodeRefundBody } from './lib/refund.mjs';
 
 export function buildBanksUrl() {
   return 'https://api.chapa.co/v1/banks';
@@ -24,6 +25,14 @@ export function buildInitializeUrl() {
   return 'https://api.chapa.co/v1/transaction/initialize';
 }
 
+export function buildCancelUrl(reference) {
+  if (typeof reference !== 'string' || !/^[A-Za-z0-9_-]+$/.test(reference)) {
+    throw new Error('Invalid reference: fails local harness safety grammar');
+  }
+
+  return `https://api.chapa.co/v1/transaction/cancel/${reference}`;
+}
+
 export async function executeOperation(operation, payloadOrReference, options = {}) {
   if (typeof options.fetch !== 'function') {
     throw new Error('Provider execution blocked: no injected fetch function');
@@ -33,6 +42,7 @@ export async function executeOperation(operation, payloadOrReference, options = 
   let method = 'GET';
   let body;
   let txRef;
+  let refundTargetIdentifier;
 
   if (operation === 'banks') {
     url = buildBanksUrl();
@@ -54,6 +64,20 @@ export async function executeOperation(operation, payloadOrReference, options = 
     if (typeof payloadOrReference.tx_ref === 'string') {
       txRef = payloadOrReference.tx_ref;
     }
+  } else if (operation === 'cancel') {
+    url = buildCancelUrl(payloadOrReference);
+    method = 'PUT';
+    txRef = payloadOrReference;
+  } else if (operation === 'refund-create') {
+    if (!payloadOrReference || typeof payloadOrReference !== 'object' || Array.isArray(payloadOrReference)) {
+      throw new Error('Local guard: refund-create requires a reviewed target identifier and input');
+    }
+    url = buildRefundCreateUrl(payloadOrReference.targetIdentifier);
+    method = 'POST';
+    body = encodeRefundBody(payloadOrReference.input ?? {});
+    refundTargetIdentifier = payloadOrReference.targetIdentifier;
+  } else if (operation === 'refund-verify') {
+    url = buildRefundVerifyUrl(payloadOrReference);
   } else {
     throw new Error('Unknown operation');
   }
@@ -61,16 +85,20 @@ export async function executeOperation(operation, payloadOrReference, options = 
   const { executeRequest } = await import('./lib/request.mjs');
 
   try {
-    return await executeRequest(url, {
+    const requestOptions = {
       ...options,
       method,
-      body,
       providerMode: true,
       fetch: options.fetch
-    });
+    };
+    if (body !== undefined) requestOptions.body = body;
+    return await executeRequest(url, requestOptions);
   } catch (err) {
-    if (operation === 'initialize' && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
+    if ((operation === 'initialize' || operation === 'cancel') && txRef && (err.kind === 'timeout' || err.kind === 'transport')) {
       err.txRef = txRef;
+    }
+    if (operation === 'refund-create' && refundTargetIdentifier && (err.kind === 'timeout' || err.kind === 'transport')) {
+      err.refundTargetIdentifier = refundTargetIdentifier;
     }
     throw err;
   }

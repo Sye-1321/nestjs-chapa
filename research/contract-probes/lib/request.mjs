@@ -42,6 +42,9 @@ export async function executeRequest(url, options = {}) {
     const isCurrencies = path === '/v1/currency_supported';
     let isVerify = false;
     let isInitialize = false;
+    let isCancel = false;
+    let isRefundCreate = false;
+    let isRefundVerify = false;
 
     if (path.startsWith('/v1/transaction/verify/')) {
        const ref = path.substring('/v1/transaction/verify/'.length);
@@ -50,9 +53,18 @@ export async function executeRequest(url, options = {}) {
        }
     } else if (path === '/v1/transaction/initialize') {
        isInitialize = true;
+    } else if (path.startsWith('/v1/transaction/cancel/')) {
+       const ref = path.substring('/v1/transaction/cancel/'.length);
+       if (ref.length > 0 && /^[A-Za-z0-9_-]+$/.test(ref)) {
+          isCancel = true;
+       }
+    } else if (/^\/v1\/refund\/[A-Za-z0-9_-]+\/verify$/.test(path)) {
+       isRefundVerify = true;
+    } else if (/^\/v1\/refund\/[A-Za-z0-9_-]+$/.test(path)) {
+       isRefundCreate = true;
     }
 
-    if (!isBanks && !isCurrencies && !isVerify && !isInitialize) {
+    if (!isBanks && !isCurrencies && !isVerify && !isInitialize && !isCancel && !isRefundCreate && !isRefundVerify) {
        throw new Error('Provider guard: Pathname not in approved M0.5 allowlist');
     }
 
@@ -102,6 +114,50 @@ export async function executeRequest(url, options = {}) {
       }
       if (!contentTypeFound) {
         throw new Error('Provider guard: Content-Type is required for initialize');
+      }
+    } else if (isCancel) {
+      if (method !== 'PUT') {
+        throw new Error('Provider guard: Method must be exactly PUT for cancellation');
+      }
+      if ('body' in options) {
+        throw new Error('Provider guard: PUT cancellation must not carry a body');
+      }
+
+      if (options.headers) {
+        const headerNames = options.headers instanceof Headers
+          ? [...options.headers.keys()]
+          : Object.keys(options.headers);
+        for (const key of headerNames) {
+          if (key.toLowerCase() !== 'authorization') {
+            throw new Error(`Provider guard: Unapproved request header ${key}`);
+          }
+        }
+      }
+    } else if (isRefundCreate) {
+      if (method !== 'POST') {
+        throw new Error('Provider guard: Method must be exactly POST for refund creation');
+      }
+      if (typeof options.body !== 'string') {
+        throw new Error('Provider guard: POST refund body must be a string');
+      }
+      let contentTypeFound = false;
+      const headerEntries = options.headers instanceof Headers
+        ? [...options.headers.entries()]
+        : Object.entries(options.headers ?? {});
+      for (const [key, value] of headerEntries) {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey !== 'authorization' && lowerKey !== 'content-type') {
+          throw new Error(`Provider guard: Unapproved request header ${key}`);
+        }
+        if (lowerKey === 'content-type') {
+          contentTypeFound = true;
+          if (value !== 'application/x-www-form-urlencoded') {
+            throw new Error('Provider guard: Content-Type must be exactly application/x-www-form-urlencoded for refund creation');
+          }
+        }
+      }
+      if (!contentTypeFound) {
+        throw new Error('Provider guard: Content-Type is required for refund creation');
       }
     } else {
       if (method !== 'GET') {
