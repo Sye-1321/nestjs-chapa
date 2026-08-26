@@ -43,7 +43,11 @@
     "clean": "node scripts/clean.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "node scripts/build.mjs",
-    "api:check": "node scripts/api-check.mjs"
+    "api:check": "node scripts/api-check.mjs",
+    "test:foundation": "pnpm build && node --test test/foundation/*.test.mjs",
+    "pack:check": "pnpm build && node scripts/pack-check.mjs",
+    "test:consumers": "pnpm build && node scripts/test-consumers.mjs",
+    "test": "pnpm typecheck && pnpm api:check && pnpm test:foundation && pnpm test:consumers"
   },
   "dependencies": { "zod": "4.4.3" },
   "peerDependencies": {
