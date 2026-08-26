@@ -10,6 +10,20 @@ export type {
   ChapaTransportResponse
 } from './core/contracts.js';
 export type { ChapaModuleOptions, ChapaRetryOptions } from './core/config/types.js';
+export type {
+  CancelPaymentResult,
+  ChapaBaseRequestOptions,
+  ChapaMutationRequestOptions,
+  ChapaPayments,
+  ChapaSafeReadRequestOptions,
+  InitializePaymentInput,
+  InitializePaymentResult,
+  JsonPrimitive,
+  JsonValue,
+  PaymentStatus,
+  VerifyPaymentResult
+} from './core/payments/types.js';
+export type { ChapaReferences, GenerateReferenceOptions } from './core/references/types.js';
 export {
   ChapaAbortError,
   ChapaApiError,
