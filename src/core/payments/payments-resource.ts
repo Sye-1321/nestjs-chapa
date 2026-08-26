@@ -58,6 +58,33 @@ function optionalString(object: Record<string, unknown>, key: string): string | 
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
+function jsonSafetyIssue(value: unknown, path: (string | number)[] = [], ancestors = new WeakSet<object>()): { path: (string | number)[]; message: string } | undefined {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return undefined;
+  if (typeof value === 'number') return Number.isFinite(value) ? undefined : { path, message: 'JSON numbers must be finite' };
+  if (typeof value !== 'object') return { path, message: `JSON values cannot contain ${typeof value}` };
+  if (ancestors.has(value)) return { path, message: 'JSON values cannot contain cycles' };
+  ancestors.add(value);
+  try {
+    if (Array.isArray(value)) {
+      for (let index = 0; index < value.length; index += 1) {
+        const issue = jsonSafetyIssue(value[index], [...path, index], ancestors);
+        if (issue) return issue;
+      }
+      return undefined;
+    }
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) return { path, message: 'JSON records must be plain objects' };
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key === 'symbol') return { path, message: 'JSON records cannot contain symbol keys' };
+      const issue = jsonSafetyIssue((value as Record<string, unknown>)[key], [...path, key], ancestors);
+      if (issue) return issue;
+    }
+    return undefined;
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
 export class PaymentsResource implements ChapaPayments {
   readonly #executor: ChapaRequestExecutor;
   readonly #configuration: ResolvedChapaConfiguration;
@@ -68,11 +95,15 @@ export class PaymentsResource implements ChapaPayments {
   }
 
   async initialize(input: InitializePaymentInput, options?: ChapaMutationRequestOptions): Promise<InitializePaymentResult> {
+    if (input && typeof input === 'object' && 'meta' in input) {
+      const issue = jsonSafetyIssue((input as { meta?: unknown }).meta, ['meta']);
+      if (issue) throw new ChapaValidationError('Invalid payment initialization input', [issue]);
+    }
     const parsed = inputSchema.safeParse(input);
     if (!parsed.success) throw validationError('Invalid payment initialization input', parsed.error);
     if (parsed.data.callbackUrl) {
       const url = new URL(parsed.data.callbackUrl);
-      const local = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+      const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
       if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local && this.#configuration.allowInsecureTestUrls)) {
         throw new ChapaValidationError('Invalid payment initialization input', [{ path: ['callbackUrl'], message: 'callbackUrl must use HTTPS outside explicitly enabled local tests' }]);
       }
@@ -97,8 +128,7 @@ export class PaymentsResource implements ChapaPayments {
     const raw = objectValue(result.data);
     const status = raw ? optionalString(raw, 'status') : undefined;
     const data = raw ? objectValue(raw.data) : undefined;
-    const checkoutUrl = (data && (optionalString(data, 'checkout_url') ?? optionalString(data, 'checkoutUrl')))
-      ?? (raw && (optionalString(raw, 'checkout_url') ?? optionalString(raw, 'checkoutUrl')));
+    const checkoutUrl = (data && optionalString(data, 'checkout_url')) ?? (raw && optionalString(raw, 'checkout_url'));
     if (!status || !checkoutUrl) throw responseError('payments.initialize', result, 'Chapa initialization response is missing required fields');
     try { new URL(checkoutUrl); } catch { throw responseError('payments.initialize', result, 'Chapa initialization response contains an unusable checkout URL'); }
     const message = raw ? optionalString(raw, 'message') : undefined;

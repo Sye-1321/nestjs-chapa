@@ -63,7 +63,34 @@ test('initialize rejects invalid email, phone, unknown subaccounts, and callback
 });
 
 test('initialize requires usable status and checkout URL', async () => {
-  for (const value of [{ data: { checkout_url: 'https://example.test' } }, { status: 'success', data: {} }, { status: 'success', data: { checkout_url: 'not a url' } }]) await assert.rejects(harness([reply(200, value)]).client.payments.initialize(minimal), errors.ChapaResponseError);
+  for (const value of [{ data: { checkout_url: 'https://example.test' } }, { status: 'success', data: {} }, { status: 'success', data: { checkout_url: 'not a url' } }, { status: 'success', data: { checkoutUrl: 'https://invented.example.test' } }]) await assert.rejects(harness([reply(200, value)]).client.payments.initialize(minimal), errors.ChapaResponseError);
+});
+
+test('initialize rejects cyclic and non-JSON-safe meta before transport', async () => {
+  const cyclic = {}; cyclic.self = cyclic;
+  for (const meta of [{ cyclic }, { bad: undefined }, { bad: 1n }, { bad() {} }, { bad: Symbol('x') }, { bad: Number.NaN }, { bad: Infinity }]) {
+    const { client, requests } = harness([initSuccess]);
+    await assert.rejects(client.payments.initialize({ ...minimal, meta }), errors.ChapaValidationError);
+    assert.equal(requests.length, 0);
+  }
+});
+
+test('initialize supports explicitly enabled IPv6 loopback callback and base URLs', async () => {
+  const { client, requests } = harness([initSuccess], { baseUrl: 'http://[::1]/v1', allowInsecureTestUrls: true });
+  await client.payments.initialize({ ...minimal, callbackUrl: 'http://[::1]/callback' });
+  assert.equal(requests[0].url, 'http://[::1]/v1/transaction/initialize');
+});
+
+test('checkout URL is exposed on success but redacted from response errors and serialization', async () => {
+  const checkoutUrl = 'https://checkout.example.test/pay?token=sensitive-token';
+  const success = await harness([reply(200, { status: 'success', data: { checkout_url: checkoutUrl } })]).client.payments.initialize(minimal);
+  assert.equal(success.checkoutUrl, checkoutUrl);
+  await assert.rejects(harness([reply(200, { status: 'success', checkout_url: checkoutUrl })]).client.payments.verify('m3_ref'), (error) => {
+    assert.ok(error instanceof errors.ChapaResponseError);
+    assert.ok(!JSON.stringify(error).includes(checkoutUrl));
+    assert.ok(!JSON.stringify(error.toJSON()).includes('sensitive-token'));
+    return true;
+  });
 });
 
 test('initialize timeout and network uncertainty make exactly one POST', async () => {

@@ -43,6 +43,7 @@ test('missing and blank secrets fail with configuration error', () => {
 test('configuration validates secure URLs, ranges, and transport shape', () => {
   assert.throws(() => configModule.resolveChapaConfiguration({ secretKey: 'x', baseUrl: 'http://example.com' }), errors.ChapaConfigurationError);
   assert.doesNotThrow(() => configModule.resolveChapaConfiguration({ secretKey: 'x', baseUrl: 'http://127.0.0.1:3000', allowInsecureTestUrls: true }));
+  assert.doesNotThrow(() => configModule.resolveChapaConfiguration({ secretKey: 'x', baseUrl: 'http://[::1]:3000', allowInsecureTestUrls: true }));
   assert.throws(() => configModule.resolveChapaConfiguration({ secretKey: 'x', timeoutMs: Infinity }), errors.ChapaConfigurationError);
   assert.throws(() => configModule.resolveChapaConfiguration({ secretKey: 'x', transport: {} }), errors.ChapaConfigurationError);
 });
