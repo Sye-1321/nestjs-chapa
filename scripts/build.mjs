@@ -4,6 +4,7 @@ import { relative, resolve } from 'node:path';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const dist = resolve(repository, 'dist');
+const source = resolve(repository, 'src');
 
 function run(config) {
   const result = spawnSync(process.execPath, ['./node_modules/typescript/bin/tsc', '-p', config], {
@@ -37,10 +38,10 @@ const temporaryMarker = `${marker}.tmp`;
 await writeFile(temporaryMarker, '{"type":"commonjs"}\n');
 await rename(temporaryMarker, marker);
 
-const entries = ['index', 'testing/index'];
+const sourceFiles = (await listFiles(source)).filter((path) => path.endsWith('.ts')).map((path) => path.slice(0, -3));
 const expected = ['cjs/package.json'];
 for (const format of ['esm', 'cjs']) {
-  for (const entry of entries) {
+  for (const entry of sourceFiles) {
     for (const suffix of ['.d.ts', '.d.ts.map', '.js', '.js.map']) expected.push(`${format}/${entry}${suffix}`);
   }
 }

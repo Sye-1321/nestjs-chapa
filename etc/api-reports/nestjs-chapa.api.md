@@ -4,6 +4,255 @@
 
 ```ts
 
+// @public (undocumented)
+export class ChapaAbortError extends ChapaError {
+}
+
+// @public (undocumented)
+export class ChapaApiError extends ChapaError {
+}
+
+// @public (undocumented)
+export class ChapaAuthenticationError extends ChapaError {
+}
+
+// @public (undocumented)
+export class ChapaConfigurationError extends ChapaError {
+}
+
+// @public (undocumented)
+export class ChapaError extends Error {
+    constructor(message: string, details: ChapaErrorDetails);
+    // (undocumented)
+    readonly attempts: number | undefined;
+    // (undocumented)
+    readonly chapaMessage: string | undefined;
+    // (undocumented)
+    readonly chapaStatus: string | undefined;
+    // (undocumented)
+    readonly code: string;
+    // (undocumented)
+    readonly correlationId: string | undefined;
+    // (undocumented)
+    readonly endpoint: string | undefined;
+    // (undocumented)
+    readonly httpStatus: number | undefined;
+    // (undocumented)
+    readonly method: ChapaHttpMethod | undefined;
+    // (undocumented)
+    readonly operation: ChapaOperation | undefined;
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly retryable: boolean;
+    // (undocumented)
+    toJSON(): Record<string, unknown>;
+}
+
+// @public (undocumented)
+export interface ChapaErrorDetails {
+    // (undocumented)
+    readonly attempts?: number;
+    // (undocumented)
+    readonly cause?: unknown;
+    // (undocumented)
+    readonly chapaMessage?: string;
+    // (undocumented)
+    readonly chapaStatus?: string;
+    // (undocumented)
+    readonly code: string;
+    // (undocumented)
+    readonly correlationId?: string;
+    // (undocumented)
+    readonly endpoint?: string;
+    // (undocumented)
+    readonly httpStatus?: number;
+    // (undocumented)
+    readonly method?: ChapaHttpMethod;
+    // (undocumented)
+    readonly operation?: ChapaOperation;
+    // (undocumented)
+    readonly raw?: unknown;
+    // (undocumented)
+    readonly retryable: boolean;
+}
+
+// @public (undocumented)
+export type ChapaHttpMethod = 'GET' | 'POST' | 'PUT';
+
+// @public (undocumented)
+export interface ChapaInstrumentationHooks {
+    // (undocumented)
+    onRequest?(event: ChapaObservation): void | Promise<void>;
+    // (undocumented)
+    onResponse?(event: ChapaObservation): void | Promise<void>;
+    // (undocumented)
+    onRetry?(event: ChapaObservation & {
+        readonly reason: string;
+    }): void | Promise<void>;
+}
+
+// @public (undocumented)
+export interface ChapaLogger {
+    // (undocumented)
+    debug(message: string, context?: Record<string, unknown>): void;
+    // (undocumented)
+    error(message: string, context?: Record<string, unknown>): void;
+    // (undocumented)
+    info(message: string, context?: Record<string, unknown>): void;
+    // (undocumented)
+    warn(message: string, context?: Record<string, unknown>): void;
+}
+
+// @public (undocumented)
+export interface ChapaModuleOptions {
+    // (undocumented)
+    readonly allowInsecureTestUrls?: boolean;
+    // (undocumented)
+    readonly baseUrl?: string;
+    // (undocumented)
+    readonly hooks?: ChapaInstrumentationHooks;
+    // (undocumented)
+    readonly logger?: ChapaLogger;
+    // (undocumented)
+    readonly logging?: {
+        readonly enabled?: boolean;
+        readonly level?: 'error' | 'warn' | 'info' | 'debug';
+    };
+    // (undocumented)
+    readonly retry?: ChapaRetryOptions;
+    // (undocumented)
+    readonly secretKey: string;
+    // (undocumented)
+    readonly timeoutMs?: number;
+    // (undocumented)
+    readonly transport?: ChapaTransport;
+    // (undocumented)
+    readonly webhookSecret?: string;
+}
+
+// @public (undocumented)
+export class ChapaNetworkError extends ChapaError {
+}
+
+// @public (undocumented)
+export interface ChapaObservation {
+    // (undocumented)
+    readonly attempts: number;
+    // (undocumented)
+    readonly correlationId?: string;
+    // (undocumented)
+    readonly durationMs?: number;
+    // (undocumented)
+    readonly endpoint: string;
+    // (undocumented)
+    readonly httpStatus?: number;
+    // (undocumented)
+    readonly method: ChapaHttpMethod;
+    // (undocumented)
+    readonly operation: ChapaOperation;
+}
+
+// @public (undocumented)
+export type ChapaOperation = 'payments.initialize' | 'payments.verify' | 'payments.cancel' | 'metadata.listBanks' | 'metadata.listCurrencies';
+
+// @public (undocumented)
+export class ChapaPermissionError extends ChapaError {
+}
+
+// @public (undocumented)
+export class ChapaRateLimitError extends ChapaError {
+}
+
+// @public (undocumented)
+export class ChapaResponseError extends ChapaError {
+}
+
+// @public (undocumented)
+export interface ChapaResponseMetadata {
+    // (undocumented)
+    readonly attempts: number;
+    // (undocumented)
+    readonly correlationId?: string;
+    // (undocumented)
+    readonly durationMs: number;
+    // (undocumented)
+    readonly endpoint: string;
+    // (undocumented)
+    readonly httpStatus: number;
+    // (undocumented)
+    readonly method: ChapaHttpMethod;
+    // (undocumented)
+    readonly operation: ChapaOperation;
+}
+
+// @public (undocumented)
+export interface ChapaRetryOptions {
+    // (undocumented)
+    readonly baseDelayMs?: number;
+    // (undocumented)
+    readonly jitter?: boolean;
+    // (undocumented)
+    readonly maxDelayMs?: number;
+    // (undocumented)
+    readonly maxSafeRetries?: 0 | 1 | 2;
+}
+
+// @public (undocumented)
+export class ChapaTimeoutError extends ChapaError {
+}
+
+// @public (undocumented)
+export interface ChapaTransport {
+    // (undocumented)
+    send(request: ChapaTransportRequest): Promise<ChapaTransportResponse>;
+}
+
+// @public (undocumented)
+export interface ChapaTransportRequest {
+    // (undocumented)
+    readonly body?: string | Uint8Array;
+    // (undocumented)
+    readonly headers: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly method: ChapaHttpMethod;
+    // (undocumented)
+    readonly signal: AbortSignal;
+    // (undocumented)
+    readonly url: string;
+}
+
+// @public (undocumented)
+export interface ChapaTransportResponse {
+    // (undocumented)
+    readonly body: Uint8Array;
+    // (undocumented)
+    readonly durationMs: number;
+    // (undocumented)
+    readonly headers: Readonly<Record<string, string>>;
+    // (undocumented)
+    readonly status: number;
+}
+
+// @public (undocumented)
+export class ChapaValidationError extends ChapaError {
+    constructor(message: string, issues: readonly ChapaValidationIssue[], details?: Omit<ChapaErrorDetails, 'code'>);
+    // (undocumented)
+    readonly issues: readonly ChapaValidationIssue[];
+}
+
+// @public (undocumented)
+export interface ChapaValidationIssue {
+    // (undocumented)
+    readonly message: string;
+    // (undocumented)
+    readonly path: readonly (string | number)[];
+}
+
+// @public (undocumented)
+export class ChapaWebhookSignatureError extends ChapaError {
+}
+
 // (No @packageDocumentation comment for this package)
 
 ```
