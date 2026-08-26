@@ -49,9 +49,10 @@
     "test:foundation": "pnpm build && node --test test/foundation/*.test.mjs",
     "test:core": "pnpm build && node --test test/core/*.test.mjs",
     "test:m3": "pnpm build && node --test test/m3/*.test.mjs",
+    "test:m4": "pnpm build && node --test test/m4/*.test.mjs",
     "pack:check": "pnpm build && node scripts/pack-check.mjs",
     "test:consumers": "pnpm build && node scripts/test-consumers.mjs",
-    "test": "pnpm typecheck && pnpm api:check && pnpm test:foundation && pnpm test:core && pnpm test:m3 && pnpm test:consumers"
+    "test": "pnpm typecheck && pnpm api:check && pnpm test:foundation && pnpm test:core && pnpm test:m3 && pnpm test:m4 && pnpm test:consumers"
   },
   "dependencies": { "zod": "4.4.3" },
   "peerDependencies": {
