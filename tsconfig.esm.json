@@ -6,7 +6,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "rootDir": "src",
-    "outDir": ".m1-proof/tsc/package/dist/esm"
+    "outDir": "dist/esm"
   },
   "include": ["src/**/*.ts"]
 }

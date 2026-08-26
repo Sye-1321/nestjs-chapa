@@ -9,7 +9,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "rootDir": "src",
-    "outDir": ".m1-proof/tsc/package/dist/cjs"
+    "outDir": "dist/cjs"
   },
   "include": ["src/**/*.ts"]
 }

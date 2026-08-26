@@ -1,6 +1,10 @@
 # M1 OQ-07 Build-Tool Proof
 
-**State**: Candidate comparison complete; awaiting maintainer review
+**State**: Maintainer-approved; OQ-07 resolved
+
+**Approval checkpoint**: M1-2 maintainer review, 2026-08-26
+
+The approved selection is TypeScript `tsc` 5.9.3 with non-bundling `dist/esm/**` and `dist/cjs/**` output, a deterministic CommonJS subtree marker, declarations and declaration maps in both trees, and conditional import/require exports with nested type targets. `reflect-metadata` is approved as dev-only proof material. Microsoft API Extractor 7.59.0 is approved as the REQ-PKG-15 mechanism.
 
 ## Scope and Versions
 

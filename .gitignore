@@ -147,3 +147,4 @@ research/contract-probes/.raw/
 
 # M1 package/build proof outputs
 .m1-proof/
+.m1-artifacts/

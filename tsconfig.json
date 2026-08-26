@@ -13,5 +13,5 @@
     "verbatimModuleSyntax": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "test/foundation/proof/**/*.ts", "tsdown.config.ts", "tsdown.proof.config.ts"]
+  "include": ["src/**/*.ts", "test/foundation/proof/**/*.ts"]
 }
