@@ -22,7 +22,7 @@ export class ChapaConfigurationError extends ChapaError {
 
 // @public (undocumented)
 export class ChapaError extends Error {
-    constructor(message: string, details: ChapaErrorDetails);
+    constructor(details: ChapaErrorDetails);
     // (undocumented)
     readonly attempts: number | undefined;
     // (undocumented)
@@ -67,6 +67,8 @@ export interface ChapaErrorDetails {
     readonly endpoint?: string;
     // (undocumented)
     readonly httpStatus?: number;
+    // (undocumented)
+    readonly message: string;
     // (undocumented)
     readonly method?: ChapaHttpMethod;
     // (undocumented)
@@ -236,7 +238,7 @@ export interface ChapaTransportResponse {
 
 // @public (undocumented)
 export class ChapaValidationError extends ChapaError {
-    constructor(message: string, issues: readonly ChapaValidationIssue[], details?: Omit<ChapaErrorDetails, 'code'>);
+    constructor(message: string, issues: readonly ChapaValidationIssue[], details?: Omit<ChapaErrorDetails, 'code' | 'message'>);
     // (undocumented)
     readonly issues: readonly ChapaValidationIssue[];
 }

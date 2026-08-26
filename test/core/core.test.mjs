@@ -51,8 +51,8 @@ test('configuration inspection and errors redact secrets', () => {
   const secret = 'synthetic-secret-value';
   const configuration = configModule.resolveChapaConfiguration({ secretKey: secret, webhookSecret: 'synthetic-webhook-secret' });
   assert.ok(!inspect(configuration).includes(secret));
-  const error = new errors.ChapaApiError('safe message', {
-    code: 'api_error', retryable: false, raw: { authorization: `Bearer ${secret}`, body: secret, nested: { secretKey: secret } }
+  const error = new errors.ChapaApiError({
+    code: 'api_error', message: 'safe message', retryable: false, raw: { authorization: `Bearer ${secret}`, body: secret, nested: { secretKey: secret } }
   });
   assert.ok(!JSON.stringify(error).includes(secret));
 });
@@ -92,6 +92,23 @@ test('successful response preserves attempts, duration, and caller correlationId
   assert.equal(result.metadata.attempts, 1);
   assert.equal(result.metadata.durationMs, 7);
   assert.equal(result.metadata.correlationId, 'corr-1');
+  assert.deepEqual(result.responseBytes, new TextEncoder().encode(JSON.stringify({ value: 1 })));
+});
+
+test('malformed JSON response carries safe request context and redacted raw material', async () => {
+  const body = new TextEncoder().encode('{"token":"synthetic-secret-value"');
+  const { executor } = executorWith({ send: async () => ({ status: 200, headers: { 'content-type': 'application/json' }, body, durationMs: 1 }) });
+  await assert.rejects(executor.execute({ policy: safePolicy, options: { maxRetries: 0, correlationId: 'corr-json' } }), (error) => {
+    assert.ok(error instanceof errors.ChapaResponseError);
+    assert.equal(error.operation, 'metadata.listBanks');
+    assert.equal(error.method, 'GET');
+    assert.equal(error.endpoint, '/banks');
+    assert.equal(error.httpStatus, 200);
+    assert.equal(error.attempts, 1);
+    assert.equal(error.correlationId, 'corr-json');
+    assert.equal(error.raw, '[REDACTED]');
+    return true;
+  });
 });
 
 test('POST initialize and PUT cancel transport failures each make one attempt and never retry', async () => {
@@ -203,11 +220,29 @@ test('observability receives allowlisted metadata only and failures are best-eff
   const contexts = [];
   const logger = { debug: (_message, context) => contexts.push(context), info() {}, warn() {}, error() {} };
   const hooks = { onRequest: () => { throw new Error('observer failure'); } };
-  const { executor } = executorWith({ send: async () => response() }, { logging: { enabled: true }, logger, hooks });
+  const { executor } = executorWith({ send: async () => response() }, { logging: { enabled: true, level: 'debug' }, logger, hooks });
   await executor.execute({ policy: safePolicy, options: { maxRetries: 0, correlationId: 'corr-safe' } });
   assert.equal(contexts.length, 2);
   assert.deepEqual(Object.keys(contexts[0]).sort(), ['attempts', 'correlationId', 'endpoint', 'method', 'operation']);
   assert.deepEqual(Object.keys(contexts[1]).sort(), ['attempts', 'correlationId', 'durationMs', 'endpoint', 'httpStatus', 'method', 'operation']);
+});
+
+test('configured logging level filters lower-level observations while hooks remain independent', async () => {
+  for (const [level, expected] of [['debug', 2], ['info', 0], ['warn', 0], ['error', 0]]) {
+    const calls = [];
+    const hookCalls = [];
+    const logger = Object.fromEntries(['debug', 'info', 'warn', 'error'].map((name) => [name, () => calls.push(name)]));
+    const hooks = { onRequest: () => hookCalls.push('request'), onResponse: () => hookCalls.push('response') };
+    const { executor } = executorWith({ send: async () => response() }, { logging: { enabled: true, level }, logger, hooks });
+    await executor.execute({ policy: safePolicy, options: { maxRetries: 0 } });
+    assert.equal(calls.length, expected);
+    assert.deepEqual(hookCalls, ['request', 'response']);
+  }
+  const calls = [];
+  const logger = Object.fromEntries(['debug', 'info', 'warn', 'error'].map((name) => [name, () => calls.push(name)]));
+  const { executor } = executorWith({ send: async () => response() }, { logging: { enabled: false, level: 'debug' }, logger });
+  await executor.execute({ policy: safePolicy, options: { maxRetries: 0 } });
+  assert.equal(calls.length, 0);
 });
 
 test('internal ChapaClient composes resolved configuration, transport, and executor', () => {

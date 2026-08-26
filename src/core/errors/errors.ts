@@ -8,6 +8,7 @@ export interface ChapaValidationIssue {
 
 export interface ChapaErrorDetails {
   readonly code: string;
+  readonly message: string;
   readonly operation?: ChapaOperation;
   readonly method?: ChapaHttpMethod;
   readonly endpoint?: string;
@@ -34,8 +35,8 @@ export class ChapaError extends Error {
   readonly retryable: boolean;
   readonly raw: unknown;
 
-  constructor(message: string, details: ChapaErrorDetails) {
-    super(message, { cause: safeCause(details.cause) });
+  constructor(details: ChapaErrorDetails) {
+    super(details.message, { cause: safeCause(details.cause) });
     this.name = new.target.name;
     this.code = details.code;
     this.operation = details.operation;
@@ -83,8 +84,8 @@ export class ChapaWebhookSignatureError extends ChapaError {}
 export class ChapaValidationError extends ChapaError {
   readonly issues: readonly ChapaValidationIssue[];
 
-  constructor(message: string, issues: readonly ChapaValidationIssue[], details: Omit<ChapaErrorDetails, 'code'> = { retryable: false }) {
-    super(message, { ...details, code: 'validation_error' });
+  constructor(message: string, issues: readonly ChapaValidationIssue[], details: Omit<ChapaErrorDetails, 'code' | 'message'> = { retryable: false }) {
+    super({ ...details, code: 'validation_error', message });
     this.issues = issues;
   }
 }

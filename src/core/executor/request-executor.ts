@@ -52,6 +52,7 @@ export interface SafeReadExecutionRequest {
 export interface ExecutionResult {
   readonly data: unknown;
   readonly raw: unknown;
+  readonly responseBytes: Uint8Array;
   readonly metadata: ChapaResponseMetadata;
 }
 
@@ -89,12 +90,7 @@ function parseBody(response: ChapaTransportResponse): unknown {
     try {
       return JSON.parse(text) as unknown;
     } catch (cause) {
-      throw new ChapaResponseError('Chapa response could not be decoded', {
-        code: 'response_error',
-        httpStatus: response.status,
-        retryable: false,
-        cause
-      });
+      throw cause;
     }
   }
   return text;
@@ -180,8 +176,9 @@ export class ChapaRequestExecutor {
           totalDurationMs += await this.#delay(request, attempts);
           continue;
         }
-        throw new ChapaNetworkError('Chapa network request failed', {
+        throw new ChapaNetworkError({
           code: 'network_error',
+          message: 'Chapa network request failed',
           operation: request.policy.operation,
           method: request.policy.method,
           endpoint: request.policy.path,
@@ -196,12 +193,30 @@ export class ChapaRequestExecutor {
       }
 
       totalDurationMs += response.durationMs;
-      const raw = parseBody(response);
+      let raw: unknown;
+      try {
+        raw = parseBody(response);
+      } catch (cause) {
+        throw new ChapaResponseError({
+          code: 'response_error',
+          message: 'Chapa response could not be decoded',
+          operation: request.policy.operation,
+          method: request.policy.method,
+          endpoint: request.policy.path,
+          httpStatus: response.status,
+          ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}),
+          attempts,
+          retryable: false,
+          cause,
+          raw: this.#configuration.redact(new TextDecoder().decode(response.body))
+        });
+      }
       if (response.status >= 200 && response.status < 300) {
         await this.#observe('response', request, attempts, { httpStatus: response.status, durationMs: totalDurationMs });
         return {
           data: raw,
           raw,
+          responseBytes: response.body.slice(),
           metadata: {
             operation: request.policy.operation,
             method: request.policy.method,
@@ -257,22 +272,22 @@ export class ChapaRequestExecutor {
       ...providerFields(this.#configuration.redact(raw))
     };
     void durationMs;
-    if (status === 401) return new ChapaAuthenticationError('Chapa authentication failed', { ...details, code: 'authentication_error' });
-    if (status === 403) return new ChapaPermissionError('Chapa permission denied', { ...details, code: 'permission_error' });
-    if (status === 429) return new ChapaRateLimitError('Chapa rate limit exceeded', { ...details, code: 'rate_limit_error' });
-    return new ChapaApiError('Chapa API request failed', { ...details, code: 'api_error' });
+    if (status === 401) return new ChapaAuthenticationError({ ...details, code: 'authentication_error', message: 'Chapa authentication failed' });
+    if (status === 403) return new ChapaPermissionError({ ...details, code: 'permission_error', message: 'Chapa permission denied' });
+    if (status === 429) return new ChapaRateLimitError({ ...details, code: 'rate_limit_error', message: 'Chapa rate limit exceeded' });
+    return new ChapaApiError({ ...details, code: 'api_error', message: 'Chapa API request failed' });
   }
 
   #timeoutError(request: MutationExecutionRequest | SafeReadExecutionRequest, attempts: number, cause?: unknown) {
-    return new ChapaTimeoutError('Chapa request timed out', {
-      code: 'timeout_error', operation: request.policy.operation, method: request.policy.method, endpoint: request.policy.path,
+    return new ChapaTimeoutError({
+      code: 'timeout_error', message: 'Chapa request timed out', operation: request.policy.operation, method: request.policy.method, endpoint: request.policy.path,
       ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}), attempts, retryable: false, cause
     });
   }
 
   #abortError(request: MutationExecutionRequest | SafeReadExecutionRequest, attempts: number, cause?: unknown) {
-    return new ChapaAbortError('Chapa request was aborted', {
-      code: 'abort_error', operation: request.policy.operation, method: request.policy.method, endpoint: request.policy.path,
+    return new ChapaAbortError({
+      code: 'abort_error', message: 'Chapa request was aborted', operation: request.policy.operation, method: request.policy.method, endpoint: request.policy.path,
       ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}), attempts, retryable: false, cause
     });
   }
@@ -293,7 +308,11 @@ export class ChapaRequestExecutor {
       ...(extra.durationMs !== undefined ? { durationMs: extra.durationMs } : {})
     };
     try {
-      if (this.#configuration.loggingEnabled) this.#configuration.logger[kind === 'retry' ? 'info' : 'debug'](`Chapa ${kind}`, event);
+      const level = kind === 'retry' ? 'info' : 'debug';
+      const order = { debug: 0, info: 1, warn: 2, error: 3 } as const;
+      if (this.#configuration.loggingEnabled && order[level] >= order[this.#configuration.loggingLevel]) {
+        this.#configuration.logger[level](`Chapa ${kind}`, event);
+      }
       if (kind === 'request') await this.#configuration.hooks?.onRequest?.(event);
       else if (kind === 'response') await this.#configuration.hooks?.onResponse?.(event);
       else await this.#configuration.hooks?.onRetry?.({ ...event, reason: extra.reason ?? 'retryable_failure' });

@@ -46,26 +46,29 @@ export class ResolvedChapaConfiguration {
   readonly logger: ChapaLogger;
   readonly hooks: ChapaInstrumentationHooks | undefined;
   readonly loggingEnabled: boolean;
+  readonly loggingLevel: 'debug' | 'info' | 'warn' | 'error';
+  readonly allowInsecureTestUrls: boolean;
   readonly webhookConfigured: boolean;
   #secretKey: string;
 
   constructor(options: ChapaModuleOptions) {
     const parsed = optionsSchema.safeParse(options);
     if (!parsed.success) {
-      throw new ChapaConfigurationError('Invalid Chapa configuration', {
+      throw new ChapaConfigurationError({
         code: 'configuration_error',
+        message: 'Invalid Chapa configuration',
         retryable: false,
         raw: parsed.error.issues.map(({ path, message }) => ({ path, message }))
       });
     }
     const baseUrl = new URL(parsed.data.baseUrl ?? DEFAULT_BASE_URL);
     if (baseUrl.protocol !== 'https:' && !(parsed.data.allowInsecureTestUrls && ['localhost', '127.0.0.1', '::1'].includes(baseUrl.hostname))) {
-      throw new ChapaConfigurationError('Invalid Chapa configuration', { code: 'configuration_error', retryable: false });
+      throw new ChapaConfigurationError({ code: 'configuration_error', message: 'Invalid Chapa configuration', retryable: false });
     }
     const baseDelayMs = parsed.data.retry?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
     const maxDelayMs = parsed.data.retry?.maxDelayMs ?? DEFAULT_MAX_DELAY_MS;
     if (maxDelayMs < baseDelayMs) {
-      throw new ChapaConfigurationError('Invalid Chapa configuration', { code: 'configuration_error', retryable: false });
+      throw new ChapaConfigurationError({ code: 'configuration_error', message: 'Invalid Chapa configuration', retryable: false });
     }
     this.#secretKey = parsed.data.secretKey;
     this.baseUrl = baseUrl.toString().replace(/\/$/, '');
@@ -80,6 +83,8 @@ export class ResolvedChapaConfiguration {
     this.logger = parsed.data.logger ?? Object.freeze({ debug() {}, info() {}, warn() {}, error() {} });
     this.hooks = parsed.data.hooks;
     this.loggingEnabled = parsed.data.logging?.enabled ?? false;
+    this.loggingLevel = parsed.data.logging?.level ?? 'info';
+    this.allowInsecureTestUrls = parsed.data.allowInsecureTestUrls ?? false;
     this.webhookConfigured = parsed.data.webhookSecret !== undefined;
     Object.freeze(this);
   }
