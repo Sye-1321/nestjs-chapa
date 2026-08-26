@@ -17,7 +17,24 @@ Short-lived branches and pull requests are the normal public-change workflow. Al
 - **Traceability**: Public/API/provider behavior changes require specification/evidence/ADR/plan traceability as applicable.
 - **Tests Required**: Behavior and code changes require appropriate tests. Documentation or governance-only changes require applicable validation, not meaningless tests. Contributors must not weaken tests simply to make a change pass.
 - **Documentation Required**: If your changes impact the public API or behavior, update the documentation.
-- **Changesets**: Changesets are required for package-impacting changes only after Changesets is configured during M1. Documentation, governance, and pre-package work may be marked N/A.
+- **Changesets**: Package-impacting changes require a Changeset. Documentation and governance-only changes may be marked N/A. The package remains private; Changesets currently records and previews version intent but does not publish.
+
+Run the provider-offline foundation checks before opening a pull request:
+
+```sh
+corepack enable
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm build
+pnpm api:check
+pnpm test:foundation
+pnpm pack:check
+pnpm test:consumers
+pnpm test
+pnpm changeset:status
+```
+
+These commands may access required package registries during installation, but tests must not contact Chapa or require a Chapa credential.
 
 ## Data Privacy and Examples
 - Examples should reflect Ethiopian payment use cases where relevant.
