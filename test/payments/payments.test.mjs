@@ -22,7 +22,7 @@ function harness(responses, options = {}) {
   return { client, requests };
 }
 
-const minimal = { amount: '10', currency: 'ETB', txRef: 'm3_ref' };
+const minimal = { amount: '10', currency: 'ETB', txRef: 'payment_ref' };
 const initSuccess = reply(200, { status: 'success', message: 'ready', data: { checkout_url: 'https://checkout.example.test/pay' } });
 
 test('initialize sends exact minimal JSON mapping and preserves caller money string', async () => {
@@ -30,14 +30,14 @@ test('initialize sends exact minimal JSON mapping and preserves caller money str
   const result = await client.payments.initialize(minimal);
   assert.equal(requests.length, 1); assert.equal(requests[0].method, 'POST');
   assert.equal(requests[0].url, 'https://api.chapa.co/v1/transaction/initialize');
-  assert.deepEqual(JSON.parse(requests[0].body), { amount: '10', currency: 'ETB', tx_ref: 'm3_ref' });
-  assert.equal(result.txRef, 'm3_ref'); assert.equal(result.checkoutUrl, 'https://checkout.example.test/pay');
+  assert.deepEqual(JSON.parse(requests[0].body), { amount: '10', currency: 'ETB', tx_ref: 'payment_ref' });
+  assert.equal(result.txRef, 'payment_ref'); assert.equal(result.checkoutUrl, 'https://checkout.example.test/pay');
 });
 
 test('initialize maps only approved optional identity, URL, customization, and meta fields', async () => {
   const { client, requests } = harness([initSuccess]);
   await client.payments.initialize({ ...minimal, firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phoneNumber: '0912345678', callbackUrl: 'https://merchant.example.test/callback', returnUrl: 'https://merchant.example.test/return', customization: { title: 'Order', description: 'Test', logo: 'https://merchant.example.test/logo.png' }, meta: { order: 'A', nested: { ok: true } } });
-  assert.deepEqual(JSON.parse(requests[0].body), { amount: '10', currency: 'ETB', tx_ref: 'm3_ref', first_name: 'Ada', last_name: 'Lovelace', email: 'ada@example.test', phone_number: '0912345678', callback_url: 'https://merchant.example.test/callback', return_url: 'https://merchant.example.test/return', customization: { title: 'Order', description: 'Test', logo: 'https://merchant.example.test/logo.png' }, meta: { order: 'A', nested: { ok: true } } });
+  assert.deepEqual(JSON.parse(requests[0].body), { amount: '10', currency: 'ETB', tx_ref: 'payment_ref', first_name: 'Ada', last_name: 'Lovelace', email: 'ada@example.test', phone_number: '0912345678', callback_url: 'https://merchant.example.test/callback', return_url: 'https://merchant.example.test/return', customization: { title: 'Order', description: 'Test', logo: 'https://merchant.example.test/logo.png' }, meta: { order: 'A', nested: { ok: true } } });
 });
 
 test('initialize rejects invalid amount forms before transport without Number conversion', async () => {
@@ -85,7 +85,7 @@ test('checkout URL is exposed on success but redacted from response errors and s
   const checkoutUrl = 'https://checkout.example.test/pay?token=sensitive-token';
   const success = await harness([reply(200, { status: 'success', data: { checkout_url: checkoutUrl } })]).client.payments.initialize(minimal);
   assert.equal(success.checkoutUrl, checkoutUrl);
-  await assert.rejects(harness([reply(200, { status: 'success', checkout_url: checkoutUrl })]).client.payments.verify('m3_ref'), (error) => {
+  await assert.rejects(harness([reply(200, { status: 'success', checkout_url: checkoutUrl })]).client.payments.verify('payment_ref'), (error) => {
     assert.ok(error instanceof errors.ChapaResponseError);
     assert.ok(!JSON.stringify(error).includes(checkoutUrl));
     assert.ok(!JSON.stringify(error.toJSON()).includes('sensitive-token'));
@@ -104,21 +104,21 @@ test('initialize rejects mutation maxRetries supplied through untyped JavaScript
 });
 
 test('verify uses exact GET path and transaction data.status only', async () => {
-  const { client, requests } = harness([reply(200, { status: 'success', data: { status: 'pending' } })]); const result = await client.payments.verify('m3_ref', { maxRetries: 0 });
-  assert.equal(requests[0].method, 'GET'); assert.equal(requests[0].url, 'https://api.chapa.co/v1/transaction/verify/m3_ref'); assert.equal(result.status, 'pending');
+  const { client, requests } = harness([reply(200, { status: 'success', data: { status: 'pending' } })]); const result = await client.payments.verify('payment_ref', { maxRetries: 0 });
+  assert.equal(requests[0].method, 'GET'); assert.equal(requests[0].url, 'https://api.chapa.co/v1/transaction/verify/payment_ref'); assert.equal(result.status, 'pending');
 });
 
 test('verify normalizes known and unknown provider transaction statuses', async () => {
-  for (const [provider, expected] of [['success', 'success'], ['pending', 'pending'], ['future_state', 'unknown']]) { const result = await harness([reply(200, { status: 'success', data: { status: provider } })]).client.payments.verify('m3_ref'); assert.equal(result.status, expected); assert.equal(result.raw.data.status, provider); }
+  for (const [provider, expected] of [['success', 'success'], ['pending', 'pending'], ['future_state', 'unknown']]) { const result = await harness([reply(200, { status: 'success', data: { status: provider } })]).client.payments.verify('payment_ref'); assert.equal(result.status, expected); assert.equal(result.raw.data.status, provider); }
 });
 
 test('verify 404 remains ChapaApiError and missing data.status is ChapaResponseError', async () => {
-  await assert.rejects(harness([reply(404, { status: 'failed', message: 'unknown' })]).client.payments.verify('m3_ref'), (error) => error instanceof errors.ChapaApiError && !(error instanceof errors.ChapaResponseError));
-  await assert.rejects(harness([reply(200, { status: 'success', data: {} })]).client.payments.verify('m3_ref'), errors.ChapaResponseError);
+  await assert.rejects(harness([reply(404, { status: 'failed', message: 'unknown' })]).client.payments.verify('payment_ref'), (error) => error instanceof errors.ChapaApiError && !(error instanceof errors.ChapaResponseError));
+  await assert.rejects(harness([reply(200, { status: 'success', data: {} })]).client.payments.verify('payment_ref'), errors.ChapaResponseError);
 });
 
 test('verify retries eligible safe GET once and bounds requested retries by global config', async () => {
-  const { client, requests } = harness([reply(503, {}), reply(200, { data: { status: 'success' } })]); const result = await client.payments.verify('m3_ref', { maxRetries: 2 });
+  const { client, requests } = harness([reply(503, {}), reply(200, { data: { status: 'success' } })]); const result = await client.payments.verify('payment_ref', { maxRetries: 2 });
   assert.equal(result.status, 'success'); assert.equal(result.response.attempts, 2); assert.equal(requests.length, 2);
 });
 
@@ -130,10 +130,10 @@ test('verify omits numeric money, preserves valid lexical strings, and echoes ca
 });
 
 test('cancel sends exact bodyless PUT with no content type and returns no invented state', async () => {
-  const { client, requests } = harness([reply(200, { status: 'success', message: 'link expired' })]); const result = await client.payments.cancel('m3_ref');
-  assert.equal(requests[0].method, 'PUT'); assert.equal(requests[0].url, 'https://api.chapa.co/v1/transaction/cancel/m3_ref'); assert.equal(requests[0].body, undefined); assert.equal(requests[0].headers['content-type'], undefined); assert.equal(result.message, 'link expired'); assert.equal(result.status, undefined);
+  const { client, requests } = harness([reply(200, { status: 'success', message: 'link expired' })]); const result = await client.payments.cancel('payment_ref');
+  assert.equal(requests[0].method, 'PUT'); assert.equal(requests[0].url, 'https://api.chapa.co/v1/transaction/cancel/payment_ref'); assert.equal(requests[0].body, undefined); assert.equal(requests[0].headers['content-type'], undefined); assert.equal(result.message, 'link expired'); assert.equal(result.status, undefined);
 });
 
 test('cancel never retries and unknown or repeat failures remain generic ChapaApiError', async () => {
-  for (const status of [400, 404, 503]) { const { client, requests } = harness([reply(status, { status: 'failed', message: 'provider message' })]); await assert.rejects(client.payments.cancel('m3_ref'), (error) => error instanceof errors.ChapaApiError && error.constructor === errors.ChapaApiError); assert.equal(requests.length, 1); }
+  for (const status of [400, 404, 503]) { const { client, requests } = harness([reply(status, { status: 'failed', message: 'provider message' })]); await assert.rejects(client.payments.cancel('payment_ref'), (error) => error instanceof errors.ChapaApiError && error.constructor === errors.ChapaApiError); assert.equal(requests.length, 1); }
 });

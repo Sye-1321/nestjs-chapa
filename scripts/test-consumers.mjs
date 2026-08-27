@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { consumerMatrix } from '../test/consumers/matrix.mjs';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
-const artifacts = resolve(repository, '.m1-artifacts');
+const artifacts = resolve(repository, '.artifacts');
 const packageDirectory = resolve(artifacts, 'consumer-package');
 const consumersDirectory = resolve(artifacts, 'consumers');
 const environment = {
@@ -67,10 +67,10 @@ import { NestFactory } from '@nestjs/core';
 ${imports}
 if (process.env.CHAPA_SECRET_KEY !== undefined) throw new Error('credential unexpectedly present');
 globalThis.fetch = async () => { throw new Error('network call attempted'); };
-@Injectable() class ConsumerProof { constructor(readonly value: string) {} }
-if (Reflect.getMetadata('design:paramtypes', ConsumerProof)?.[0] !== String) throw new Error('decorator metadata missing');
+@Injectable() class ConsumerFixture { constructor(readonly value: string) {} }
+if (Reflect.getMetadata('design:paramtypes', ConsumerFixture)?.[0] !== String) throw new Error('decorator metadata missing');
 if (typeof root.ChapaError !== 'function' || typeof testing.generateChapaTestSignature !== 'function') throw new Error('unexpected public API');
-const rawBody = Buffer.from('{"event":"consumer.proof"}');
+const rawBody = Buffer.from('{"event":"consumer.fixture"}');
 if (!/^[0-9a-f]{64}$/.test(testing.generateChapaTestSignature({ rawBody, secret: 'synthetic-webhook-secret' }))) throw new Error('testing helper failed');
 let transportCalls = 0;
 const transport = { send: async () => { transportCalls += 1; throw new Error('unexpected transport call'); } };

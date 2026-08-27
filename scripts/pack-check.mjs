@@ -3,8 +3,8 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
-const artifacts = resolve(repository, '.m1-artifacts', 'pack');
-const environment = { ...process.env, npm_config_cache: resolve(repository, '.m1-artifacts', 'npm-cache') };
+const artifacts = resolve(repository, '.artifacts', 'pack');
+const environment = { ...process.env, npm_config_cache: resolve(repository, '.artifacts', 'npm-cache') };
 await rm(artifacts, { recursive: true, force: true });
 await mkdir(artifacts, { recursive: true });
 

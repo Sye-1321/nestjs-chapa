@@ -59,15 +59,11 @@ For Express, enable Nest raw bodies with `NestFactory.create<NestExpressApplicat
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm build
-pnpm api:check
-pnpm test:foundation
-pnpm pack:check
-pnpm test:consumers
 pnpm test
+pnpm pack:check
+pnpm changeset:status
 ```
 
-Tests are provider-offline/Chapa-offline. They require no Chapa credential and must not contact Chapa endpoints.
+Use targeted commands such as `pnpm test:payments`, `pnpm test:webhooks`, or `pnpm test:nest` for faster development feedback. `pnpm test` is the normal full-suite check. Tests are provider-offline/Chapa-offline, require no Chapa credential, and must not contact Chapa endpoints.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [ROADMAP.md](ROADMAP.md), and the normative [technical specification](docs/specification/TECHNICAL_SPECIFICATION.md).

@@ -14,25 +14,22 @@ Security vulnerabilities must follow the private reporting process outlined in [
 
 ## Developer Workflow and Pull Requests
 Short-lived branches and pull requests are the normal public-change workflow. All public changes must be proposed via pull requests.
-- **Traceability**: Public/API/provider behavior changes require specification/evidence/ADR/plan traceability as applicable.
+- **Provider behavior**: Read the frozen V1 contract and retained evidence before changing provider behavior. Never guess unresolved behavior or use real credentials.
 - **Tests Required**: Behavior and code changes require appropriate tests. Documentation or governance-only changes require applicable validation, not meaningless tests. Contributors must not weaken tests simply to make a change pass.
 - **Documentation Required**: If your changes impact the public API or behavior, update the documentation.
-- **Changesets**: Package-impacting changes require a Changeset. Documentation and governance-only changes may be marked N/A. The package remains private; Changesets currently records and previews version intent but does not publish.
+- **Changesets**: Package-facing changes warrant an appropriate Changeset. Documentation and governance-only changes may be marked N/A. The package is not yet published; releases are maintainer-controlled.
 
-Run the provider-offline foundation checks before opening a pull request:
+Run the relevant provider-offline checks before opening a pull request:
 
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm build
-pnpm api:check
-pnpm test:foundation
-pnpm pack:check
-pnpm test:consumers
 pnpm test
+pnpm pack:check
 pnpm changeset:status
 ```
+
+During development, targeted commands such as `pnpm test:payments`, `pnpm test:webhooks`, and `pnpm test:nest` can provide faster feedback. The aggregate `pnpm test` command is the normal full-suite check.
 
 These commands may access required package registries during installation, but tests must not contact Chapa or require a Chapa credential.
 

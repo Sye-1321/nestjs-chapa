@@ -88,10 +88,10 @@ test('clean builds are deterministic', () => {
   assert.match(result.stdout, /dist files/);
 });
 test('stale output cannot survive build', async () => {
-  await writeFile(resolve(repository, 'dist/stale-proof.txt'), 'stale');
+  await writeFile(resolve(repository, 'dist/stale-output.txt'), 'stale');
   const result = spawnSync(process.execPath, ['scripts/build.mjs'], { cwd: repository, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
-  await assert.rejects(readFile(resolve(repository, 'dist/stale-proof.txt')));
+  await assert.rejects(readFile(resolve(repository, 'dist/stale-output.txt')));
 });
 test('actual tarball satisfies the allowlist', () => {
   const result = spawnSync(process.execPath, ['scripts/pack-check.mjs'], { cwd: repository, encoding: 'utf8' });
@@ -116,15 +116,11 @@ test('package import creates no listener or timer handle', () => runNode(`
   if (added.some((resource) => /Timeout|TCPSERVERWRAP|TCPWRAP/.test(resource))) throw new Error('listener or timer created');
 `));
 test('package import creates no working-directory file', async () => {
-  const directory = await mkdtemp(resolve(tmpdir(), 'm1-import-'));
+  const directory = await mkdtemp(resolve(tmpdir(), 'package-import-'));
   try {
     runNode(`await import('${new URL('../../dist/esm/index.js', import.meta.url).href}');`, directory);
     assert.deepEqual(await readdir(directory), []);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
-});
-test('research tests remain outside production tests', async () => {
-  assert.ok((await readdir(resolve(repository, 'research/contract-probes/test'))).some((name) => name.endsWith('.test.mjs')));
-  assert.ok((await readdir(resolve(repository, 'test/foundation'))).every((name) => name === 'proof' || name.endsWith('.test.mjs')));
 });

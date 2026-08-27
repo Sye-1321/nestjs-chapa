@@ -40,7 +40,7 @@ Tensions can occur between community members even when they are trying their bes
 
 When an incident does occur, it is important to report it promptly.
 
-Public issues, pull requests, and discussions must not contain sensitive or confidential conduct reports. Establishing a dedicated private Code-of-Conduct reporting channel is an explicit M1 community-governance activation requirement. Before public contribution or community moderation is declared fully operational, the maintainer must publish a real private conduct-reporting channel here. (Note: `SECURITY.md` remains exclusively for security vulnerabilities).
+Public issues, pull requests, and discussions must not contain sensitive or confidential conduct reports. Contact the maintainer through a private channel; if none is available, ask publicly only for a private contact route and include no sensitive details. `SECURITY.md` remains exclusively for security vulnerabilities.
 
 The Maintainer takes reports of violations seriously and will make every effort to respond in a timely manner. They will investigate all reports of code of conduct violations, reviewing messages, logs, and recordings, or interviewing witnesses and other participants. The Maintainer will keep investigation and enforcement actions as transparent as possible while prioritizing safety and confidentiality. In order to honor these values, enforcement actions are carried out in private with the involved parties, but communicating to the whole community may be part of a mutually agreed upon resolution.
 
