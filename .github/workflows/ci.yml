@@ -47,5 +47,7 @@ jobs:
         run: pnpm pack:check
       - name: Packed consumers
         run: pnpm test:consumers
+      - name: Ensure Changesets base branch
+        run: git show-ref --verify --quiet refs/heads/main || git branch main origin/main
       - name: Changesets status
         run: pnpm changeset:status
