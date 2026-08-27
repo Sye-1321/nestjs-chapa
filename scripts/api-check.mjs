@@ -47,7 +47,10 @@ for (const entry of [
   await extract(cjsName, `dist/cjs/${entry.path}`, '<projectFolder>/.m1-artifacts/api-extractor/reports', true, `${entry.name}.api.md`);
   const esmReport = await readFile(resolve(baseline, `${entry.name}.api.md`), 'utf8');
   const cjsReport = await readFile(resolve(temporary, 'reports', `${entry.name}.api.md`), 'utf8');
-  if (esmReport !== cjsReport) throw new Error(`ESM/CJS API surface mismatch for ${entry.name}`);
+  const normalizeLineEndings = (report) => report.replace(/\r\n/g, '\n');
+  if (normalizeLineEndings(esmReport) !== normalizeLineEndings(cjsReport)) {
+    throw new Error(`ESM/CJS API surface mismatch for ${entry.name}`);
+  }
 }
 
 console.log('API Extractor baselines and ESM/CJS parity passed for root and ./testing.');
