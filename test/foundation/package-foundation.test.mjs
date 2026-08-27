@@ -59,8 +59,8 @@ test('dist exactly mirrors production source artifacts', async () => {
 });
 test('root ESM import works', async () => assert.equal(typeof (await import('@sye1321/nestjs-chapa')).ChapaError, 'function'));
 test('root CJS require works', () => assert.equal(typeof require('@sye1321/nestjs-chapa').ChapaError, 'function'));
-test('./testing ESM import works', async () => assert.deepEqual(Object.keys(await import('@sye1321/nestjs-chapa/testing')), []));
-test('./testing CJS require works', () => assert.deepEqual(Object.keys(require('@sye1321/nestjs-chapa/testing')), []));
+test('./testing ESM import works', async () => assert.deepEqual(Object.keys(await import('@sye1321/nestjs-chapa/testing')), ['generateChapaTestSignature']));
+test('./testing CJS require works', () => assert.deepEqual(Object.keys(require('@sye1321/nestjs-chapa/testing')), ['generateChapaTestSignature']));
 test('private/deep import fails', async () => assert.rejects(import('@sye1321/nestjs-chapa/dist/esm/index.js'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' }));
 test('API Extractor baselines pass with ESM/CJS parity', () => {
   const result = spawnSync(process.execPath, ['scripts/api-check.mjs'], { cwd: repository, encoding: 'utf8' });
@@ -71,9 +71,17 @@ test('root API baseline contains only approved core contracts', async () => {
   assert.match(report, /ChapaError/);
   assert.doesNotMatch(report, /ChapaClient|ChapaRequestExecutor|FetchTransport/);
 });
-test('testing API baseline is empty', async () => assert.match(await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa-testing.api.md'), 'utf8'), /No @packageDocumentation/));
+test('testing API baseline contains only the approved signature helper', async () => {
+  const report = await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa-testing.api.md'), 'utf8');
+  assert.match(report, /generateChapaTestSignature/);
+  assert.doesNotMatch(report, /chapa-signature|ChapaClient|ChapaRequestExecutor/);
+});
 test('public API has no Zod leakage', async () => assert.doesNotMatch((await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8')).toLowerCase(), /zod/));
-test('public API has no Nest dependency-type leakage', async () => assert.doesNotMatch((await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8')).toLowerCase(), /@nestjs/));
+test('public API Nest type dependency is limited to the supported common module contract', async () => {
+  const report = (await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8')).toLowerCase();
+  assert.match(report, /@nestjs\/common/);
+  assert.doesNotMatch(report, /@nestjs\/(core|testing|platform-)/);
+});
 test('clean builds are deterministic', () => {
   const result = spawnSync(process.execPath, ['scripts/determinism-check.mjs'], { cwd: repository, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
@@ -102,9 +110,10 @@ test('package import requires no credential and attempts no fetch', () => runNod
   await import('${new URL('../../dist/esm/index.js', import.meta.url).href}');
 `));
 test('package import creates no listener or timer handle', () => runNode(`
-  const before = process._getActiveHandles().length;
+  const before = process.getActiveResourcesInfo();
   await import('${new URL('../../dist/esm/index.js', import.meta.url).href}');
-  if (process._getActiveHandles().length !== before) throw new Error('active handle created');
+  const added = process.getActiveResourcesInfo().filter((resource) => !before.includes(resource));
+  if (added.some((resource) => /Timeout|TCPSERVERWRAP|TCPWRAP/.test(resource))) throw new Error('listener or timer created');
 `));
 test('package import creates no working-directory file', async () => {
   const directory = await mkdtemp(resolve(tmpdir(), 'm1-import-'));

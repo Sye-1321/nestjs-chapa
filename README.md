@@ -2,9 +2,22 @@
 
 Community-maintained NestJS integration for Chapa. This project is not an official Chapa SDK and does not imply Chapa endorsement.
 
-## Current status
+## Setup
 
-M0.5 provider-contract verification and M1 repository foundation are complete. Core transport infrastructure and the specification-backed payment/reference contracts are implemented. Metadata, webhooks, Nest integration, and provider refunds are not implemented yet.
+```ts
+@Module({
+  imports: [ChapaModule.register({
+    secretKey: process.env.CHAPA_SECRET_KEY!,
+    webhookSecret: process.env.CHAPA_WEBHOOK_SECRET,
+  })],
+})
+export class AppModule {}
+
+@Injectable()
+export class CheckoutService {
+  constructor(private readonly chapa: ChapaService) {}
+}
+```
 
 ## Payment flow
 
@@ -12,7 +25,33 @@ Initialize a hosted payment, redirect the customer to the returned checkout URL,
 
 Cancellation expires the hosted checkout under the verified contract; it does not prove a universal cancelled transaction state. Refund operations remain excluded.
 
-## Foundation commands
+```ts
+const initialized = await this.chapa.payments.initialize(input);
+// Redirect the customer to initialized.checkoutUrl.
+const payment = await this.chapa.payments.verify(initialized.txRef);
+
+const banks = await this.chapa.metadata.listBanks();
+const currencies = await this.chapa.metadata.listCurrencies();
+const txRef = this.chapa.references.generate({ prefix: 'order' });
+```
+
+Mutations are not automatically retried. Always verify a payment before fulfilment. Refunds remain excluded from version 1.
+
+## Webhooks
+
+Webhooks require the exact raw request bytes; never reconstruct them from parsed JSON.
+
+```ts
+const verified = this.chapa.webhooks.verify({
+  rawBody: request.rawBody!,
+  headers: request.headers,
+});
+// Re-query payments.verify(verified.event.txRef) before fulfilment.
+```
+
+For Express, enable Nest raw bodies with `NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true })` and use `RawBodyRequest<Request>`. For Fastify, use the same `{ rawBody: true }` option with `NestFastifyApplication` and a `RawBodyRequest<FastifyRequest>`. The verifier API is platform-neutral.
+
+## Development commands
 
 ```sh
 corepack enable
