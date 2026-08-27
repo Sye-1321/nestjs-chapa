@@ -1,4 +1,4 @@
-const sensitiveKeys = /authorization|secret|signature|token|password|email|phone|account|first.?name|last.?name|body/i;
+const sensitiveKeys = /authorization|secret|signature|token|password|email|phone|account|first.?name|last.?name|body|checkout.?url/i;
 
 export function redactSensitive(value: unknown, knownSecrets: readonly string[] = []): unknown {
   if (typeof value === 'string') {

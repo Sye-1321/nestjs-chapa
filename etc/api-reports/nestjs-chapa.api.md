@@ -5,6 +5,18 @@
 ```ts
 
 // @public (undocumented)
+export interface CancelPaymentResult {
+    // (undocumented)
+    readonly message?: string;
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly response: ChapaResponseMetadata;
+    // (undocumented)
+    readonly txRef: string;
+}
+
+// @public (undocumented)
 export class ChapaAbortError extends ChapaError {
 }
 
@@ -14,6 +26,16 @@ export class ChapaApiError extends ChapaError {
 
 // @public (undocumented)
 export class ChapaAuthenticationError extends ChapaError {
+}
+
+// @public (undocumented)
+export interface ChapaBaseRequestOptions {
+    // (undocumented)
+    readonly correlationId?: string;
+    // (undocumented)
+    readonly signal?: AbortSignal;
+    // (undocumented)
+    readonly timeoutMs?: number;
 }
 
 // @public (undocumented)
@@ -134,6 +156,9 @@ export interface ChapaModuleOptions {
 }
 
 // @public (undocumented)
+export type ChapaMutationRequestOptions = ChapaBaseRequestOptions;
+
+// @public (undocumented)
 export class ChapaNetworkError extends ChapaError {
 }
 
@@ -159,11 +184,27 @@ export interface ChapaObservation {
 export type ChapaOperation = 'payments.initialize' | 'payments.verify' | 'payments.cancel' | 'metadata.listBanks' | 'metadata.listCurrencies';
 
 // @public (undocumented)
+export interface ChapaPayments {
+    // (undocumented)
+    cancel(txRef: string, options?: ChapaMutationRequestOptions): Promise<CancelPaymentResult>;
+    // (undocumented)
+    initialize(input: InitializePaymentInput, options?: ChapaMutationRequestOptions): Promise<InitializePaymentResult>;
+    // (undocumented)
+    verify(txRef: string, options?: ChapaSafeReadRequestOptions): Promise<VerifyPaymentResult>;
+}
+
+// @public (undocumented)
 export class ChapaPermissionError extends ChapaError {
 }
 
 // @public (undocumented)
 export class ChapaRateLimitError extends ChapaError {
+}
+
+// @public (undocumented)
+export interface ChapaReferences {
+    // (undocumented)
+    generate(options?: GenerateReferenceOptions): string;
 }
 
 // @public (undocumented)
@@ -198,6 +239,12 @@ export interface ChapaRetryOptions {
     readonly maxDelayMs?: number;
     // (undocumented)
     readonly maxSafeRetries?: 0 | 1 | 2;
+}
+
+// @public (undocumented)
+export interface ChapaSafeReadRequestOptions extends ChapaBaseRequestOptions {
+    // (undocumented)
+    readonly maxRetries?: 0 | 1 | 2;
 }
 
 // @public (undocumented)
@@ -253,6 +300,99 @@ export interface ChapaValidationIssue {
 
 // @public (undocumented)
 export class ChapaWebhookSignatureError extends ChapaError {
+}
+
+// @public (undocumented)
+export interface GenerateReferenceOptions {
+    // (undocumented)
+    readonly prefix?: string;
+    // (undocumented)
+    readonly separator?: string;
+    // (undocumented)
+    readonly size?: number;
+}
+
+// @public (undocumented)
+export interface InitializePaymentInput {
+    // (undocumented)
+    readonly amount: string;
+    // (undocumented)
+    readonly callbackUrl?: string;
+    // (undocumented)
+    readonly currency: string;
+    // (undocumented)
+    readonly customization?: {
+        readonly title?: string;
+        readonly description?: string;
+        readonly logo?: string;
+    };
+    // (undocumented)
+    readonly email?: string;
+    // (undocumented)
+    readonly firstName?: string;
+    // (undocumented)
+    readonly lastName?: string;
+    // (undocumented)
+    readonly meta?: Readonly<Record<string, JsonValue>>;
+    // (undocumented)
+    readonly phoneNumber?: string;
+    // (undocumented)
+    readonly returnUrl?: string;
+    // (undocumented)
+    readonly txRef: string;
+}
+
+// @public (undocumented)
+export interface InitializePaymentResult {
+    // (undocumented)
+    readonly checkoutUrl: string;
+    // (undocumented)
+    readonly message?: string;
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly response: ChapaResponseMetadata;
+    // (undocumented)
+    readonly status: string;
+    // (undocumented)
+    readonly txRef: string;
+}
+
+// @public (undocumented)
+export type JsonPrimitive = string | number | boolean | null;
+
+// @public (undocumented)
+export type JsonValue = JsonPrimitive | readonly JsonValue[] | {
+    readonly [key: string]: JsonValue;
+};
+
+// @public (undocumented)
+export type PaymentStatus = 'success' | 'pending' | 'failed' | 'cancelled' | 'refunded' | 'reversed' | 'unknown';
+
+// @public (undocumented)
+export interface VerifyPaymentResult {
+    // (undocumented)
+    readonly amount?: string;
+    // (undocumented)
+    readonly charge?: string;
+    // (undocumented)
+    readonly createdAt?: string;
+    // (undocumented)
+    readonly currency?: string;
+    // (undocumented)
+    readonly mode?: string;
+    // (undocumented)
+    readonly paymentMethod?: string;
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly response: ChapaResponseMetadata;
+    // (undocumented)
+    readonly status: PaymentStatus;
+    // (undocumented)
+    readonly txRef: string;
+    // (undocumented)
+    readonly updatedAt?: string;
 }
 
 // (No @packageDocumentation comment for this package)

@@ -62,7 +62,7 @@ export class ResolvedChapaConfiguration {
       });
     }
     const baseUrl = new URL(parsed.data.baseUrl ?? DEFAULT_BASE_URL);
-    if (baseUrl.protocol !== 'https:' && !(parsed.data.allowInsecureTestUrls && ['localhost', '127.0.0.1', '::1'].includes(baseUrl.hostname))) {
+    if (baseUrl.protocol !== 'https:' && !(parsed.data.allowInsecureTestUrls && ['localhost', '127.0.0.1', '[::1]'].includes(baseUrl.hostname))) {
       throw new ChapaConfigurationError({ code: 'configuration_error', message: 'Invalid Chapa configuration', retryable: false });
     }
     const baseDelayMs = parsed.data.retry?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
