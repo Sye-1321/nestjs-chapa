@@ -12,7 +12,7 @@ const DEFAULT_MAX_DELAY_MS = 5_000;
 
 const optionsSchema = z.object({
   secretKey: z.string().trim().min(1, 'secretKey is required'),
-  webhookSecret: z.string().trim().min(1, 'webhookSecret must not be blank').optional(),
+  webhookSecret: z.string().refine((value) => value.trim().length > 0, 'webhookSecret must not be blank').optional(),
   baseUrl: z.string().url('baseUrl must be a valid URL').optional(),
   timeoutMs: z.number().int().min(1).max(300_000).optional(),
   retry: z.object({
@@ -50,6 +50,7 @@ export class ResolvedChapaConfiguration {
   readonly allowInsecureTestUrls: boolean;
   readonly webhookConfigured: boolean;
   #secretKey: string;
+  #webhookSecret: string | undefined;
 
   constructor(options: ChapaModuleOptions) {
     const parsed = optionsSchema.safeParse(options);
@@ -71,6 +72,7 @@ export class ResolvedChapaConfiguration {
       throw new ChapaConfigurationError({ code: 'configuration_error', message: 'Invalid Chapa configuration', retryable: false });
     }
     this.#secretKey = parsed.data.secretKey;
+    this.#webhookSecret = parsed.data.webhookSecret;
     this.baseUrl = baseUrl.toString().replace(/\/$/, '');
     this.timeoutMs = parsed.data.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.retry = Object.freeze({
@@ -93,8 +95,12 @@ export class ResolvedChapaConfiguration {
     return `Bearer ${this.#secretKey}`;
   }
 
+  webhookSecret(): string | undefined {
+    return this.#webhookSecret;
+  }
+
   redact(value: unknown): unknown {
-    return redactSensitive(value, [this.#secretKey]);
+    return redactSensitive(value, [this.#secretKey, this.#webhookSecret].filter((value): value is string => value !== undefined));
   }
 
   [inspect.custom](): string {
