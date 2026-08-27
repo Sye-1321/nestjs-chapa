@@ -1,0 +1,53 @@
+name: Provider-offline CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  foundation:
+    name: Node ${{ matrix.node }} foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Enable pinned pnpm for cache discovery
+        run: corepack enable
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - name: Enable pinned pnpm
+        run: corepack enable
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+      - name: API extraction
+        run: pnpm api:check
+      - name: Foundation tests
+        run: pnpm test:foundation
+      - name: Package contents
+        run: pnpm pack:check
+      - name: Packed consumers
+        run: pnpm test:consumers
+      - name: Ensure Changesets base branch
+        run: git show-ref --verify --quiet refs/heads/main || git branch main origin/main
+      - name: Changesets status
+        run: pnpm changeset:status

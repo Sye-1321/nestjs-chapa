@@ -20,7 +20,7 @@
 <!-- Are documentation updates required and included? -->
 
 ## Changeset Classification
-<!-- Does this PR include a changeset? (Major / Minor / Patch). N/A remains valid when Changesets is not yet configured or when the change has no package/release impact (e.g., documentation/governance-only changes). -->
+<!-- Does this PR include a changeset? (Major / Minor / Patch). N/A is valid only when the change has no package/release impact, such as documentation or governance-only work. -->
 
 ## Unresolved Risks / Reviewer Focus
 <!-- What are the remaining risks? What should reviewers focus on? -->

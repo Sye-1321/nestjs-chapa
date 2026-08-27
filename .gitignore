@@ -144,3 +144,7 @@ vite.config.ts.timestamp-*
 
 # M0.5-A research probes
 research/contract-probes/.raw/
+
+# M1 package/build proof outputs
+.m1-proof/
+.m1-artifacts/
