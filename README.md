@@ -46,7 +46,10 @@ const verified = this.chapa.webhooks.verify({
   rawBody: request.rawBody!,
   headers: request.headers,
 });
-// Re-query payments.verify(verified.event.txRef) before fulfilment.
+if (verified.event.txRef) {
+  const payment = await this.chapa.payments.verify(verified.event.txRef);
+  // Confirm the expected payment details before fulfilment.
+}
 ```
 
 For Express, enable Nest raw bodies with `NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true })` and use `RawBodyRequest<Request>`. For Fastify, use the same `{ rawBody: true }` option with `NestFastifyApplication` and a `RawBodyRequest<FastifyRequest>`. The verifier API is platform-neutral.

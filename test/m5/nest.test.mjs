@@ -18,6 +18,15 @@ function assertResources(service) {
   for (const name of ['payments', 'metadata', 'webhooks', 'references']) assert.ok(service[name]);
 }
 
+function currenciesResponse() {
+  return {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+    body: new TextEncoder().encode(JSON.stringify({ currency_code: [987], currency_name: ['SYNTHETIC'], sensitive_marker: 'must-not-be-logged' })),
+    durationMs: 1
+  };
+}
+
 test('register constructs and injects the real service without network', async () => {
   const module = await compile(ChapaModule.register({ secretKey: synthetic, transport, logger }));
   assertResources(module.get(ChapaService));
@@ -52,6 +61,51 @@ test('missing or blank secretKey fails provider construction', async () => {
   for (const secretKey of [undefined, '   ']) {
     await assert.rejects(compile(ChapaModule.register({ secretKey, transport })), ChapaConfigurationError);
   }
+});
+
+test('overridden CHAPA_TRANSPORT is the transport used by ChapaService resources', async () => {
+  const requests = [];
+  const overriddenTransport = { send: async (request) => { requests.push(request); return currenciesResponse(); } };
+  const originalFetch = globalThis.fetch;
+  let fetchCalls = 0;
+  globalThis.fetch = async () => { fetchCalls += 1; throw new Error('global fetch must not be used'); };
+  try {
+    const module = await Test.createTestingModule({ imports: [ChapaModule.register({ secretKey: synthetic })] })
+      .overrideProvider(CHAPA_TRANSPORT)
+      .useValue(overriddenTransport)
+      .compile();
+    const result = await module.get(ChapaService).metadata.listCurrencies({ maxRetries: 0 });
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, 'https://api.chapa.co/v1/currency_supported');
+    assert.deepEqual(result.currencies, [{ providerCode: 987, name: 'SYNTHETIC', raw: { currency_code: 987, currency_name: 'SYNTHETIC' } }]);
+    assert.equal(fetchCalls, 0);
+    await module.close();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('overridden CHAPA_LOGGER is the logger actually used by ChapaClient', async () => {
+  const observations = [];
+  const overriddenLogger = {
+    debug: (message, context) => observations.push({ message, context }),
+    info() {}, warn() {}, error() {}
+  };
+  const overriddenTransport = { send: async () => currenciesResponse() };
+  const module = await Test.createTestingModule({
+    imports: [ChapaModule.register({ secretKey: synthetic, logging: { enabled: true, level: 'debug' } })]
+  })
+    .overrideProvider(CHAPA_TRANSPORT)
+    .useValue(overriddenTransport)
+    .overrideProvider(CHAPA_LOGGER)
+    .useValue(overriddenLogger)
+    .compile();
+  await module.get(ChapaService).metadata.listCurrencies({ maxRetries: 0 });
+  assert.deepEqual(observations.map(({ message }) => message), ['Chapa request', 'Chapa response']);
+  const serialized = JSON.stringify(observations);
+  assert.doesNotMatch(serialized, new RegExp(synthetic));
+  assert.doesNotMatch(serialized, /must-not-be-logged|currency_code|currency_name|authorization/i);
+  await module.close();
 });
 
 test('src/core has zero Nest imports', async () => {

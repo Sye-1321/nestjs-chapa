@@ -316,7 +316,7 @@ export interface ChapaSafeReadRequestOptions extends ChapaBaseRequestOptions {
 
 // @public (undocumented)
 export class ChapaService {
-    constructor(options: ChapaModuleOptions);
+    constructor(options: ChapaModuleOptions, transport: ChapaTransport, logger: ChapaLogger);
     // (undocumented)
     readonly metadata: ChapaMetadata;
     // (undocumented)
