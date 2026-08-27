@@ -4,7 +4,7 @@ import { Extractor, ExtractorConfig } from '@microsoft/api-extractor';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const baseline = resolve(repository, 'etc', 'api-reports');
-const temporary = resolve(repository, '.m1-artifacts', 'api-extractor');
+const temporary = resolve(repository, '.artifacts', 'api-extractor');
 const update = process.argv.includes('--update');
 await mkdir(baseline, { recursive: true });
 await mkdir(resolve(temporary, 'reports'), { recursive: true });
@@ -20,7 +20,7 @@ async function extract(name, declaration, reportFolder, localBuild, reportName =
         enabled: true,
         reportFileName: reportName,
         reportFolder,
-        reportTempFolder: '<projectFolder>/.m1-artifacts/api-extractor/temp'
+        reportTempFolder: '<projectFolder>/.artifacts/api-extractor/temp'
       },
       docModel: { enabled: false },
       dtsRollup: { enabled: false },
@@ -48,7 +48,7 @@ for (const entry of [
 ]) {
   await extract(entry.name, `dist/esm/${entry.path}`, '<projectFolder>/etc/api-reports', update);
   const cjsName = `${entry.name}-cjs`;
-  await extract(cjsName, `dist/cjs/${entry.path}`, '<projectFolder>/.m1-artifacts/api-extractor/reports', true, `${entry.name}.api.md`);
+  await extract(cjsName, `dist/cjs/${entry.path}`, '<projectFolder>/.artifacts/api-extractor/reports', true, `${entry.name}.api.md`);
   const esmReport = await readFile(resolve(baseline, `${entry.name}.api.md`), 'utf8');
   const cjsReport = await readFile(resolve(temporary, 'reports', `${entry.name}.api.md`), 'utf8');
   const normalizeLineEndings = (report) => report.replace(/\r\n/g, '\n');
