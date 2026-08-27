@@ -41,8 +41,8 @@ jobs:
         run: pnpm build
       - name: API extraction
         run: pnpm api:check
-      - name: Foundation tests
-        run: pnpm test:foundation
+      - name: Packaging tests
+        run: pnpm test:packaging
       - name: Package contents
         run: pnpm pack:check
       - name: Packed consumers

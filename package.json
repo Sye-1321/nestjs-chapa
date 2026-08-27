@@ -2,7 +2,7 @@
   "name": "@sye1321/nestjs-chapa",
   "version": "0.0.0",
   "private": true,
-  "description": "Community-maintained NestJS integration foundation for Chapa",
+  "description": "Community-maintained NestJS integration for Chapa",
   "keywords": ["nestjs", "chapa", "payments", "ethiopia"],
   "license": "MIT",
   "repository": {
@@ -46,14 +46,16 @@
     "api:check": "node scripts/api-check.mjs",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "test:foundation": "pnpm build && node --test test/foundation/*.test.mjs",
+    "test:packaging": "pnpm build && node --test test/packaging/*.test.mjs",
     "test:core": "pnpm build && node --test test/core/*.test.mjs",
-    "test:m3": "pnpm build && node --test test/m3/*.test.mjs",
-    "test:m4": "pnpm build && node --test test/m4/*.test.mjs",
-    "test:m5": "pnpm build && node --test test/m5/*.test.mjs",
+    "test:payments": "pnpm build && node --test test/payments/*.test.mjs",
+    "test:references": "pnpm build && node --test test/references/*.test.mjs",
+    "test:metadata": "pnpm build && node --test test/metadata/*.test.mjs",
+    "test:webhooks": "pnpm build && node --test test/webhooks/*.test.mjs",
+    "test:nest": "pnpm build && node --test test/nest/*.test.mjs",
     "pack:check": "pnpm build && node scripts/pack-check.mjs",
     "test:consumers": "pnpm build && node scripts/test-consumers.mjs",
-    "test": "pnpm typecheck && pnpm api:check && pnpm test:foundation && pnpm test:core && pnpm test:m3 && pnpm test:m4 && pnpm test:m5 && pnpm test:consumers"
+    "test": "pnpm typecheck && pnpm api:check && pnpm test:packaging && pnpm test:core && pnpm test:payments && pnpm test:references && pnpm test:metadata && pnpm test:webhooks && pnpm test:nest && pnpm test:consumers"
   },
   "dependencies": { "zod": "4.4.3" },
   "peerDependencies": {
