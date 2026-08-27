@@ -24,21 +24,12 @@ Run the relevant provider-offline checks before opening a pull request:
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm build
-pnpm api:check
-pnpm test:packaging
-pnpm test:core
-pnpm test:payments
-pnpm test:references
-pnpm test:metadata
-pnpm test:webhooks
-pnpm test:nest
-pnpm pack:check
-pnpm test:consumers
 pnpm test
+pnpm pack:check
 pnpm changeset:status
 ```
+
+During development, targeted commands such as `pnpm test:payments`, `pnpm test:webhooks`, and `pnpm test:nest` can provide faster feedback. The aggregate `pnpm test` command is the normal full-suite check.
 
 These commands may access required package registries during installation, but tests must not contact Chapa or require a Chapa credential.
 
