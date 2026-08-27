@@ -62,7 +62,7 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm build
 pnpm api:check
-pnpm test:foundation
+pnpm test:packaging
 pnpm pack:check
 pnpm test:consumers
 pnpm test

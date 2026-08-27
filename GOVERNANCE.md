@@ -15,7 +15,7 @@ For the initial project state, the project operates under a solo-maintainer mode
 - **npm Release Authority**: Sye initially.
 
 ## Decision Making
-Material architecture, public API, compatibility, security, reliability, dependency, or release-policy decisions not already fixed by the specification must be proposed and accepted via Architecture Decision Records (ADRs). The technical specification remains the normative authority.
+The maintainer decides material architecture, public API, compatibility, security, reliability, dependency, and release-policy changes not already fixed by the specification. The technical specification remains the normative authority.
 
 ## Adding/Removing Maintainers and Succession
 As the community grows, additional maintainers may be nominated based on sustained contributions. Additional maintainers require a documented maintainer decision and explicit assignment of responsibilities.

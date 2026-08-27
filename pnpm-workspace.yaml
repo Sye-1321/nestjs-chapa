@@ -1,6 +1,1 @@
 minimumReleaseAge: 1440
-# Temporary exact-version proof exceptions. Remove after both releases are older
-# than the 24-hour policy window; dependency updates remain lockfile-reviewed.
-minimumReleaseAgeExclude:
-  - '@nestjs/common@11.2.3'
-  - '@nestjs/core@11.2.3'
