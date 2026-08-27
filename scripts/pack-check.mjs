@@ -1,4 +1,4 @@
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, readdir, rm } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
@@ -14,7 +14,16 @@ function pack(args) {
   return JSON.parse(result.stdout)[0];
 }
 
-const entries = ['index', 'testing/index'];
+async function sourceEntries(directory, prefix = '') {
+  const result = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    if (entry.isDirectory()) result.push(...await sourceEntries(resolve(directory, entry.name), `${prefix}${entry.name}/`));
+    else if (entry.name.endsWith('.ts')) result.push(`${prefix}${entry.name.slice(0, -3)}`);
+  }
+  return result;
+}
+
+const entries = await sourceEntries(resolve(repository, 'src'));
 const expected = ['CHANGELOG.md', 'LICENSE', 'README.md', 'SECURITY.md', 'package.json', 'dist/cjs/package.json'];
 for (const format of ['esm', 'cjs']) {
   for (const entry of entries) {

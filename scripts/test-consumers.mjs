@@ -68,7 +68,10 @@ if (process.env.CHAPA_SECRET_KEY !== undefined) throw new Error('credential unex
 globalThis.fetch = async () => { throw new Error('network call attempted'); };
 @Injectable() class ConsumerProof { constructor(readonly value: string) {} }
 if (Reflect.getMetadata('design:paramtypes', ConsumerProof)?.[0] !== String) throw new Error('decorator metadata missing');
-if (Object.keys(root).length || Object.keys(testing).length) throw new Error('unexpected public API');
+if (typeof root.ChapaError !== 'function' || Object.keys(testing).length) throw new Error('unexpected public API');
+for (const internal of ['ChapaClient', 'ChapaRequestExecutor', 'FetchTransport']) {
+  if (internal in root) throw new Error('internal API leaked');
+}
 const deepPath = '@sye1321/nestjs-chapa' + '/dist/index.js';
 try { ${deepImport}; throw new Error('deep import unexpectedly resolved'); }
 catch (error) { if (error instanceof Error && error.message === 'deep import unexpectedly resolved') throw error; }

@@ -27,7 +27,11 @@ async function extract(name, declaration, reportFolder, localBuild, reportName =
       tsdocMetadata: { enabled: false },
       messages: {
         compilerMessageReporting: { default: { logLevel: 'error' } },
-        extractorMessageReporting: { default: { logLevel: 'error' } },
+        extractorMessageReporting: {
+          default: { logLevel: 'error' },
+          'ae-missing-release-tag': { logLevel: 'none' },
+          'ae-undocumented': { logLevel: 'none' }
+        },
         tsdocMessageReporting: { default: { logLevel: 'error' } }
       }
     },
