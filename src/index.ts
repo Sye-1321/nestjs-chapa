@@ -10,6 +10,7 @@ export type {
   ChapaTransportResponse
 } from './core/contracts.js';
 export type { ChapaModuleOptions, ChapaRetryOptions } from './core/config/types.js';
+export type { ChapaBank, ChapaCurrency, ChapaMetadata, ListBanksResult, ListCurrenciesResult } from './core/metadata/types.js';
 export type {
   CancelPaymentResult,
   ChapaBaseRequestOptions,

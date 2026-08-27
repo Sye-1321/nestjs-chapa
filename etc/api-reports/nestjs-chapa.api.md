@@ -29,6 +29,24 @@ export class ChapaAuthenticationError extends ChapaError {
 }
 
 // @public (undocumented)
+export interface ChapaBank {
+    // (undocumented)
+    readonly accountLength?: number;
+    // (undocumented)
+    readonly currency?: string;
+    // (undocumented)
+    readonly id?: string | number;
+    // (undocumented)
+    readonly name: string;
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly slug?: string;
+    // (undocumented)
+    readonly swift?: string;
+}
+
+// @public (undocumented)
 export interface ChapaBaseRequestOptions {
     // (undocumented)
     readonly correlationId?: string;
@@ -40,6 +58,16 @@ export interface ChapaBaseRequestOptions {
 
 // @public (undocumented)
 export class ChapaConfigurationError extends ChapaError {
+}
+
+// @public (undocumented)
+export interface ChapaCurrency {
+    // (undocumented)
+    readonly name: string;
+    // (undocumented)
+    readonly providerCode: number;
+    // (undocumented)
+    readonly raw: unknown;
 }
 
 // @public (undocumented)
@@ -126,6 +154,14 @@ export interface ChapaLogger {
     info(message: string, context?: Record<string, unknown>): void;
     // (undocumented)
     warn(message: string, context?: Record<string, unknown>): void;
+}
+
+// @public (undocumented)
+export interface ChapaMetadata {
+    // (undocumented)
+    listBanks(options?: ChapaSafeReadRequestOptions): Promise<ListBanksResult>;
+    // (undocumented)
+    listCurrencies(options?: ChapaSafeReadRequestOptions): Promise<ListCurrenciesResult>;
 }
 
 // @public (undocumented)
@@ -365,6 +401,26 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | readonly JsonValue[] | {
     readonly [key: string]: JsonValue;
 };
+
+// @public (undocumented)
+export interface ListBanksResult {
+    // (undocumented)
+    readonly banks: readonly ChapaBank[];
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly response: ChapaResponseMetadata;
+}
+
+// @public (undocumented)
+export interface ListCurrenciesResult {
+    // (undocumented)
+    readonly currencies: readonly ChapaCurrency[];
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly response: ChapaResponseMetadata;
+}
 
 // @public (undocumented)
 export type PaymentStatus = 'success' | 'pending' | 'failed' | 'cancelled' | 'refunded' | 'reversed' | 'unknown';
