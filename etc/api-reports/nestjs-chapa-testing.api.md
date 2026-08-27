@@ -4,6 +4,17 @@
 
 ```ts
 
+// @public (undocumented)
+export function generateChapaTestSignature(input: GenerateChapaTestSignatureInput): string;
+
+// @public (undocumented)
+export interface GenerateChapaTestSignatureInput {
+    // (undocumented)
+    readonly rawBody: Buffer | Uint8Array;
+    // (undocumented)
+    readonly secret: string;
+}
+
 // (No @packageDocumentation comment for this package)
 
 ```

@@ -5,6 +5,7 @@ import { MetadataResource } from '../metadata/metadata-resource.js';
 import { PaymentsResource } from '../payments/payments-resource.js';
 import { ReferencesResource } from '../references/references-resource.js';
 import { FetchTransport } from '../transport/fetch-transport.js';
+import { WebhooksResource } from '../webhooks/webhooks-resource.js';
 
 export class ChapaClient {
   readonly configuration: ResolvedChapaConfiguration;
@@ -12,6 +13,7 @@ export class ChapaClient {
   readonly payments: PaymentsResource;
   readonly references: ReferencesResource;
   readonly metadata: MetadataResource;
+  readonly webhooks: WebhooksResource;
 
   constructor(options: ChapaModuleOptions) {
     this.configuration = resolveChapaConfiguration(options);
@@ -20,5 +22,6 @@ export class ChapaClient {
     this.payments = new PaymentsResource(this.executor, this.configuration);
     this.references = new ReferencesResource();
     this.metadata = new MetadataResource(this.executor);
+    this.webhooks = new WebhooksResource(this.configuration);
   }
 }

@@ -25,6 +25,20 @@ export type {
   VerifyPaymentResult
 } from './core/payments/types.js';
 export type { ChapaReferences, GenerateReferenceOptions } from './core/references/types.js';
+export type {
+  ChapaChargeSuccessWebhookEvent,
+  ChapaKnownWebhookEvent,
+  ChapaUnknownWebhookEvent,
+  ChapaWebhookEvent,
+  ChapaWebhookEventBase,
+  ChapaWebhooks,
+  VerifiedWebhook,
+  VerifyWebhookInput
+} from './core/webhooks/types.js';
+export { ChapaModule } from './nest/chapa-module.js';
+export type { ChapaModuleAsyncOptions } from './nest/chapa-module.js';
+export { ChapaService } from './nest/chapa-service.js';
+export { CHAPA_LOGGER, CHAPA_TRANSPORT } from './nest/tokens.js';
 export {
   ChapaAbortError,
   ChapaApiError,

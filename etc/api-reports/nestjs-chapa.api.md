@@ -4,6 +4,9 @@
 
 ```ts
 
+import type { ConfigurableModuleAsyncOptions } from '@nestjs/common';
+import type { DynamicModule } from '@nestjs/common';
+
 // @public (undocumented)
 export interface CancelPaymentResult {
     // (undocumented)
@@ -15,6 +18,12 @@ export interface CancelPaymentResult {
     // (undocumented)
     readonly txRef: string;
 }
+
+// @public (undocumented)
+export const CHAPA_LOGGER: unique symbol;
+
+// @public (undocumented)
+export const CHAPA_TRANSPORT: unique symbol;
 
 // @public (undocumented)
 export class ChapaAbortError extends ChapaError {
@@ -54,6 +63,14 @@ export interface ChapaBaseRequestOptions {
     readonly signal?: AbortSignal;
     // (undocumented)
     readonly timeoutMs?: number;
+}
+
+// @public (undocumented)
+export interface ChapaChargeSuccessWebhookEvent extends ChapaWebhookEventBase {
+    // (undocumented)
+    readonly event: 'charge.success';
+    // (undocumented)
+    readonly status: 'success';
 }
 
 // @public (undocumented)
@@ -145,6 +162,9 @@ export interface ChapaInstrumentationHooks {
 }
 
 // @public (undocumented)
+export type ChapaKnownWebhookEvent = ChapaChargeSuccessWebhookEvent;
+
+// @public (undocumented)
 export interface ChapaLogger {
     // (undocumented)
     debug(message: string, context?: Record<string, unknown>): void;
@@ -163,6 +183,17 @@ export interface ChapaMetadata {
     // (undocumented)
     listCurrencies(options?: ChapaSafeReadRequestOptions): Promise<ListCurrenciesResult>;
 }
+
+// @public (undocumented)
+export class ChapaModule {
+    // (undocumented)
+    static register(options: ChapaModuleOptions): DynamicModule;
+    // (undocumented)
+    static registerAsync(options: ChapaModuleAsyncOptions): DynamicModule;
+}
+
+// @public (undocumented)
+export type ChapaModuleAsyncOptions = ConfigurableModuleAsyncOptions<ChapaModuleOptions>;
 
 // @public (undocumented)
 export interface ChapaModuleOptions {
@@ -284,6 +315,19 @@ export interface ChapaSafeReadRequestOptions extends ChapaBaseRequestOptions {
 }
 
 // @public (undocumented)
+export class ChapaService {
+    constructor(options: ChapaModuleOptions, transport: ChapaTransport, logger: ChapaLogger);
+    // (undocumented)
+    readonly metadata: ChapaMetadata;
+    // (undocumented)
+    readonly payments: ChapaPayments;
+    // (undocumented)
+    readonly references: ChapaReferences;
+    // (undocumented)
+    readonly webhooks: ChapaWebhooks;
+}
+
+// @public (undocumented)
 export class ChapaTimeoutError extends ChapaError {
 }
 
@@ -320,6 +364,12 @@ export interface ChapaTransportResponse {
 }
 
 // @public (undocumented)
+export interface ChapaUnknownWebhookEvent extends ChapaWebhookEventBase {
+    // (undocumented)
+    readonly event: string;
+}
+
+// @public (undocumented)
 export class ChapaValidationError extends ChapaError {
     constructor(message: string, issues: readonly ChapaValidationIssue[], details?: Omit<ChapaErrorDetails, 'code' | 'message'>);
     // (undocumented)
@@ -332,6 +382,31 @@ export interface ChapaValidationIssue {
     readonly message: string;
     // (undocumented)
     readonly path: readonly (string | number)[];
+}
+
+// @public (undocumented)
+export type ChapaWebhookEvent = ChapaKnownWebhookEvent | ChapaUnknownWebhookEvent;
+
+// @public (undocumented)
+export interface ChapaWebhookEventBase {
+    // (undocumented)
+    readonly amount?: string;
+    // (undocumented)
+    readonly currency?: string;
+    // (undocumented)
+    readonly event: string;
+    // (undocumented)
+    readonly raw: unknown;
+    // (undocumented)
+    readonly status?: string;
+    // (undocumented)
+    readonly txRef?: string;
+}
+
+// @public (undocumented)
+export interface ChapaWebhooks {
+    // (undocumented)
+    verify(input: VerifyWebhookInput): VerifiedWebhook;
 }
 
 // @public (undocumented)
@@ -426,6 +501,18 @@ export interface ListCurrenciesResult {
 export type PaymentStatus = 'success' | 'pending' | 'failed' | 'cancelled' | 'refunded' | 'reversed' | 'unknown';
 
 // @public (undocumented)
+export interface VerifiedWebhook<T extends ChapaWebhookEvent = ChapaWebhookEvent> {
+    // (undocumented)
+    readonly event: T;
+    // (undocumented)
+    readonly rawBody: Buffer;
+    // (undocumented)
+    readonly signature: string;
+    // (undocumented)
+    readonly verifiedBy: 'x-chapa-signature';
+}
+
+// @public (undocumented)
 export interface VerifyPaymentResult {
     // (undocumented)
     readonly amount?: string;
@@ -449,6 +536,16 @@ export interface VerifyPaymentResult {
     readonly txRef: string;
     // (undocumented)
     readonly updatedAt?: string;
+}
+
+// @public (undocumented)
+export interface VerifyWebhookInput {
+    // (undocumented)
+    readonly headers: Readonly<Record<string, string | readonly string[] | undefined>>;
+    // (undocumented)
+    readonly rawBody: Buffer | Uint8Array;
+    // (undocumented)
+    readonly secret?: string;
 }
 
 // (No @packageDocumentation comment for this package)

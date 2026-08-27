@@ -62,13 +62,28 @@ for (const fixture of consumerMatrix) {
     : `require(deepPath)`;
   await writeFile(resolve(consumer, 'src', `runtime.${extension}`), `
 import 'reflect-metadata';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 ${imports}
 if (process.env.CHAPA_SECRET_KEY !== undefined) throw new Error('credential unexpectedly present');
 globalThis.fetch = async () => { throw new Error('network call attempted'); };
 @Injectable() class ConsumerProof { constructor(readonly value: string) {} }
 if (Reflect.getMetadata('design:paramtypes', ConsumerProof)?.[0] !== String) throw new Error('decorator metadata missing');
-if (typeof root.ChapaError !== 'function' || Object.keys(testing).length) throw new Error('unexpected public API');
+if (typeof root.ChapaError !== 'function' || typeof testing.generateChapaTestSignature !== 'function') throw new Error('unexpected public API');
+const rawBody = Buffer.from('{"event":"consumer.proof"}');
+if (!/^[0-9a-f]{64}$/.test(testing.generateChapaTestSignature({ rawBody, secret: 'synthetic-webhook-secret' }))) throw new Error('testing helper failed');
+let transportCalls = 0;
+const transport = { send: async () => { transportCalls += 1; throw new Error('unexpected transport call'); } };
+class ConsumerModule {}
+Module({ imports: [root.ChapaModule.register({ secretKey: 'synthetic-api-secret', transport })] })(ConsumerModule);
+async function proveNestIntegration() {
+  const app = await NestFactory.createApplicationContext(ConsumerModule, { logger: false });
+  const chapa = app.get(root.ChapaService);
+  if (!chapa.payments || !chapa.metadata || !chapa.webhooks || !chapa.references) throw new Error('resource missing');
+  if (transportCalls !== 0) throw new Error('provider request during bootstrap');
+  await app.close();
+}
+void proveNestIntegration().catch((error) => { console.error(error); process.exitCode = 1; });
 for (const internal of ['ChapaClient', 'ChapaRequestExecutor', 'FetchTransport']) {
   if (internal in root) throw new Error('internal API leaked');
 }
@@ -76,7 +91,7 @@ const deepPath = '@sye1321/nestjs-chapa' + '/dist/index.js';
 try { ${deepImport}; throw new Error('deep import unexpectedly resolved'); }
 catch (error) { if (error instanceof Error && error.message === 'deep import unexpectedly resolved') throw error; }
 `);
-  await writeFile(resolve(consumer, 'src', 'bundler.ts'), `import * as root from '@sye1321/nestjs-chapa'; import * as testing from '@sye1321/nestjs-chapa/testing'; void root; void testing;\n`);
+  await writeFile(resolve(consumer, 'src', 'bundler.ts'), `import { ChapaModule, ChapaService } from '@sye1321/nestjs-chapa'; import { generateChapaTestSignature } from '@sye1321/nestjs-chapa/testing'; void ChapaModule; void ChapaService; void generateChapaTestSignature;\n`);
   await writeFile(resolve(consumer, 'tsconfig.json'), `${JSON.stringify({ compilerOptions: {
     target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', outDir: 'out', strict: true,
     experimentalDecorators: true, emitDecoratorMetadata: true, skipLibCheck: false
