@@ -1,6 +1,6 @@
 import { mkdir, readdir, rm } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const artifacts = resolve(repository, '.artifacts', 'pack');
@@ -9,7 +9,12 @@ await rm(artifacts, { recursive: true, force: true });
 await mkdir(artifacts, { recursive: true });
 
 function pack(args) {
-  const result = spawnSync('npm', args, { cwd: repository, env: environment, encoding: 'utf8', shell: process.platform === 'win32' });
+  const npmCli = resolve(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+  const result = spawnSync(process.execPath, [npmCli, ...args], {
+    cwd: repository,
+    env: environment,
+    encoding: 'utf8'
+  });
   if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'npm pack failed');
   return JSON.parse(result.stdout)[0];
 }
@@ -17,7 +22,8 @@ function pack(args) {
 async function sourceEntries(directory, prefix = '') {
   const result = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.isDirectory()) result.push(...await sourceEntries(resolve(directory, entry.name), `${prefix}${entry.name}/`));
+    if (entry.isDirectory())
+      result.push(...(await sourceEntries(resolve(directory, entry.name), `${prefix}${entry.name}/`)));
     else if (entry.name.endsWith('.ts')) result.push(`${prefix}${entry.name.slice(0, -3)}`);
   }
   return result;
@@ -35,7 +41,8 @@ expected.sort();
 const dryRun = pack(['pack', '--dry-run', '--json']);
 const actual = pack(['pack', '--json', '--pack-destination', artifacts]);
 for (const result of [dryRun, actual]) {
-  if (result.name !== '@sye1321/nestjs-chapa' || result.version !== '0.0.0') throw new Error('incorrect packed identity');
+  if (result.name !== '@sye1321/nestjs-chapa' || result.version !== '0.0.0')
+    throw new Error('incorrect packed identity');
   const paths = result.files.map(({ path }) => path.replaceAll('\\', '/')).sort();
   if (JSON.stringify(paths) !== JSON.stringify(expected)) {
     throw new Error(`Unexpected tarball contents.\nExpected: ${expected.join(', ')}\nActual: ${paths.join(', ')}`);

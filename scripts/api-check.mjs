@@ -29,8 +29,8 @@ async function extract(name, declaration, reportFolder, localBuild, reportName =
         compilerMessageReporting: { default: { logLevel: 'error' } },
         extractorMessageReporting: {
           default: { logLevel: 'error' },
-          'ae-missing-release-tag': { logLevel: 'none' },
-          'ae-undocumented': { logLevel: 'none' }
+          'ae-missing-release-tag': { logLevel: 'error' },
+          'ae-undocumented': { logLevel: 'error' }
         },
         tsdocMessageReporting: { default: { logLevel: 'error' } }
       }
@@ -48,7 +48,13 @@ for (const entry of [
 ]) {
   await extract(entry.name, `dist/esm/${entry.path}`, '<projectFolder>/etc/api-reports', update);
   const cjsName = `${entry.name}-cjs`;
-  await extract(cjsName, `dist/cjs/${entry.path}`, '<projectFolder>/.artifacts/api-extractor/reports', true, `${entry.name}.api.md`);
+  await extract(
+    cjsName,
+    `dist/cjs/${entry.path}`,
+    '<projectFolder>/.artifacts/api-extractor/reports',
+    true,
+    `${entry.name}.api.md`
+  );
   const esmReport = await readFile(resolve(baseline, `${entry.name}.api.md`), 'utf8');
   const cjsReport = await readFile(resolve(temporary, 'reports', `${entry.name}.api.md`), 'utf8');
   const normalizeLineEndings = (report) => report.replace(/\r\n/g, '\n');

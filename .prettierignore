@@ -1,0 +1,7 @@
+dist
+.artifacts
+docs/specification
+docs/contracts/2026-08-25-m0.5-contract-freeze-proposal.md
+test/fixtures/chapa
+etc/api-reports
+pnpm-lock.yaml
