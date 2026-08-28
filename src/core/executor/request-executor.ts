@@ -79,7 +79,6 @@ function defaultSleep(milliseconds: number, signal: AbortSignal): Promise<void> 
       signal.removeEventListener('abort', onAbort);
       resolve();
     }, milliseconds);
-    timer.unref?.();
     signal.addEventListener('abort', onAbort, { once: true });
   });
 }
@@ -168,7 +167,6 @@ export class ChapaRequestExecutor {
         timedOut = true;
         controller.abort(new DOMException('Timed out', 'TimeoutError'));
       }, timeoutMs);
-      timer.unref?.();
 
       let response: ChapaTransportResponse;
       try {

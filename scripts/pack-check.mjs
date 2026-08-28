@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const artifacts = resolve(repository, '.artifacts', 'pack');
@@ -10,11 +10,12 @@ await rm(artifacts, { recursive: true, force: true });
 await mkdir(artifacts, { recursive: true });
 
 function pack(args) {
-  const npmCli = resolve(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
-  const result = spawnSync(process.execPath, [npmCli, ...args], {
+  const windows = process.platform === 'win32';
+  const result = spawnSync(windows ? 'npm.cmd' : 'npm', args, {
     cwd: repository,
     env: environment,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    shell: windows
   });
   if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'npm pack failed');
   return JSON.parse(result.stdout)[0];
