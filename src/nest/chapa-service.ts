@@ -9,13 +9,21 @@ import type { ChapaWebhooks } from '../core/webhooks/types.js';
 import { MODULE_OPTIONS_TOKEN } from './module-definition.js';
 import { CHAPA_LOGGER, CHAPA_TRANSPORT } from './tokens.js';
 
+/** Framework-managed facade injected after registering {@link ChapaModule}.
+ * @public
+ */
 @Injectable()
 export class ChapaService {
+  /** Payment initialization, verification, and checkout cancellation operations. */
   readonly payments: ChapaPayments;
+  /** Evidence-backed bank and currency lookups. */
   readonly metadata: ChapaMetadata;
+  /** Offline webhook signature verification. */
   readonly webhooks: ChapaWebhooks;
+  /** Local cryptographic transaction-reference generation. */
   readonly references: ChapaReferences;
 
+  /** @internal Constructed by Nest dependency injection. */
   constructor(
     @Inject(MODULE_OPTIONS_TOKEN) options: ChapaModuleOptions,
     @Inject(CHAPA_TRANSPORT) transport: ChapaTransport,

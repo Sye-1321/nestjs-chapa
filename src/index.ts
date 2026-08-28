@@ -1,3 +1,9 @@
+/**
+ * NestJS integration for Chapa payments, verification, metadata, references, and webhooks.
+ * Configure {@link ChapaModule} and inject {@link ChapaService}; network-capable internals are not public.
+ *
+ * @packageDocumentation
+ */
 export type {
   ChapaHttpMethod,
   ChapaInstrumentationHooks,
@@ -10,7 +16,13 @@ export type {
   ChapaTransportResponse
 } from './core/contracts.js';
 export type { ChapaModuleOptions, ChapaRetryOptions } from './core/config/types.js';
-export type { ChapaBank, ChapaCurrency, ChapaMetadata, ListBanksResult, ListCurrenciesResult } from './core/metadata/types.js';
+export type {
+  ChapaBank,
+  ChapaCurrency,
+  ChapaMetadata,
+  ListBanksResult,
+  ListCurrenciesResult
+} from './core/metadata/types.js';
 export type {
   CancelPaymentResult,
   ChapaBaseRequestOptions,
@@ -53,4 +65,4 @@ export {
   ChapaValidationError,
   ChapaWebhookSignatureError
 } from './core/errors/errors.js';
-export type { ChapaErrorDetails, ChapaValidationIssue } from './core/errors/errors.js';
+export type { ChapaValidationIssue } from './core/errors/errors.js';

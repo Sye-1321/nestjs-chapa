@@ -1,4 +1,10 @@
-import type { ChapaHttpMethod, ChapaOperation, ChapaResponseMetadata, ChapaTransport, ChapaTransportResponse } from '../contracts.js';
+import type {
+  ChapaHttpMethod,
+  ChapaOperation,
+  ChapaResponseMetadata,
+  ChapaTransport,
+  ChapaTransportResponse
+} from '../contracts.js';
 import type { ResolvedChapaConfiguration } from '../config/configuration.js';
 import {
   ChapaAbortError,
@@ -65,12 +71,16 @@ const retryableStatuses = new Set([408, 425, 500, 502, 503, 504]);
 
 function defaultSleep(milliseconds: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, milliseconds);
-    timer.unref?.();
-    signal.addEventListener('abort', () => {
+    const onAbort = () => {
       clearTimeout(timer);
       reject(new DOMException('Aborted', 'AbortError'));
-    }, { once: true });
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, milliseconds);
+    timer.unref?.();
+    signal.addEventListener('abort', onAbort, { once: true });
   });
 }
 
@@ -85,13 +95,9 @@ function parseBody(response: ChapaTransportResponse): unknown {
   const text = new TextDecoder().decode(response.body);
   if (text.length === 0) return undefined;
   const contentType = response.headers['content-type']?.toLowerCase();
-  const looksJson = /^[\s]*[\[{]/.test(text);
+  const looksJson = /^\s*[[{]/.test(text);
   if (contentType?.includes('json') || looksJson) {
-    try {
-      return JSON.parse(text) as unknown;
-    } catch (cause) {
-      throw cause;
-    }
+    return JSON.parse(text) as unknown;
   }
   return text;
 }
@@ -111,7 +117,11 @@ export class ChapaRequestExecutor {
   readonly #sleep: (milliseconds: number, signal: AbortSignal) => Promise<void>;
   readonly #random: () => number;
 
-  constructor(configuration: ResolvedChapaConfiguration, transport: ChapaTransport, dependencies: ExecutorDependencies = {}) {
+  constructor(
+    configuration: ResolvedChapaConfiguration,
+    transport: ChapaTransport,
+    dependencies: ExecutorDependencies = {}
+  ) {
     this.#configuration = configuration;
     this.#transport = transport;
     this.#sleep = dependencies.sleep ?? defaultSleep;
@@ -126,12 +136,15 @@ export class ChapaRequestExecutor {
     }
     const timeoutMs = request.options?.timeoutMs ?? this.#configuration.timeoutMs;
     if (!Number.isFinite(timeoutMs) || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300_000) {
-      throw new ChapaValidationError('Invalid request options', [{ path: ['options', 'timeoutMs'], message: 'timeoutMs is outside the safe range' }]);
+      throw new ChapaValidationError('Invalid request options', [
+        { path: ['options', 'timeoutMs'], message: 'timeoutMs is outside the safe range' }
+      ]);
     }
     const configuredRetries = this.#configuration.retry.maxSafeRetries;
-    const requestedRetries = request.policy.retry === 'safe-read'
-      ? (request.options as SafeReadExecutionOptions | undefined)?.maxRetries ?? configuredRetries
-      : 0;
+    const requestedRetries =
+      request.policy.retry === 'safe-read'
+        ? ((request.options as SafeReadExecutionOptions | undefined)?.maxRetries ?? configuredRetries)
+        : 0;
     const maxRetries = Math.min(requestedRetries, configuredRetries);
     const maximumAttempts = 1 + maxRetries;
     let attempts = 0;
@@ -159,7 +172,6 @@ export class ChapaRequestExecutor {
           headers: Object.freeze({
             authorization: this.#configuration.authorizationHeader(),
             accept: 'application/json',
-            'user-agent': '@sye1321/nestjs-chapa/0.0.0',
             ...('body' in request && request.body !== undefined ? { 'content-type': 'application/json' } : {})
           }),
           ...('body' in request && request.body !== undefined ? { body: request.body } : {}),
@@ -212,7 +224,10 @@ export class ChapaRequestExecutor {
         });
       }
       if (response.status >= 200 && response.status < 300) {
-        await this.#observe('response', request, attempts, { httpStatus: response.status, durationMs: totalDurationMs });
+        await this.#observe('response', request, attempts, {
+          httpStatus: response.status,
+          durationMs: totalDurationMs
+        });
         return {
           data: raw,
           raw,
@@ -230,19 +245,31 @@ export class ChapaRequestExecutor {
       }
 
       const retryAfterMs = response.status === 429 ? parseRetryAfter(response.headers['retry-after']) : undefined;
-      const retryable = request.policy.retry === 'safe-read' && (retryableStatuses.has(response.status) || (response.status === 429 && retryAfterMs !== undefined));
+      const retryable =
+        request.policy.retry === 'safe-read' &&
+        (retryableStatuses.has(response.status) || (response.status === 429 && retryAfterMs !== undefined));
       if (retryable && attempts < maximumAttempts) {
-        await this.#observe('retry', request, attempts, { reason: `http_${response.status}`, httpStatus: response.status });
+        await this.#observe('retry', request, attempts, {
+          reason: `http_${response.status}`,
+          httpStatus: response.status
+        });
         totalDurationMs += await this.#delay(request, attempts, retryAfterMs);
         continue;
       }
-      throw this.#apiError(request, response.status, raw, attempts, totalDurationMs, retryable);
+      throw this.#apiError(request, response.status, raw, attempts, retryable);
     }
     throw new Error('unreachable executor state');
   }
 
-  async #delay(request: MutationExecutionRequest | SafeReadExecutionRequest, retryNumber: number, retryAfterMs?: number): Promise<number> {
-    const exponential = Math.min(this.#configuration.retry.maxDelayMs, this.#configuration.retry.baseDelayMs * (2 ** (retryNumber - 1)));
+  async #delay(
+    request: MutationExecutionRequest | SafeReadExecutionRequest,
+    retryNumber: number,
+    retryAfterMs?: number
+  ): Promise<number> {
+    const exponential = Math.min(
+      this.#configuration.retry.maxDelayMs,
+      this.#configuration.retry.baseDelayMs * 2 ** (retryNumber - 1)
+    );
     const computed = this.#configuration.retry.jitter ? Math.floor(this.#random() * (exponential + 1)) : exponential;
     const delay = Math.min(this.#configuration.retry.maxDelayMs, retryAfterMs ?? computed);
     const controller = new AbortController();
@@ -259,7 +286,13 @@ export class ChapaRequestExecutor {
     return delay;
   }
 
-  #apiError(request: MutationExecutionRequest | SafeReadExecutionRequest, status: number, raw: unknown, attempts: number, durationMs: number, retryable: boolean) {
+  #apiError(
+    request: MutationExecutionRequest | SafeReadExecutionRequest,
+    status: number,
+    raw: unknown,
+    attempts: number,
+    retryable: boolean
+  ) {
     const details = {
       operation: request.policy.operation,
       method: request.policy.method,
@@ -271,24 +304,47 @@ export class ChapaRequestExecutor {
       raw: this.#configuration.redact(raw),
       ...providerFields(this.#configuration.redact(raw))
     };
-    void durationMs;
-    if (status === 401) return new ChapaAuthenticationError({ ...details, code: 'authentication_error', message: 'Chapa authentication failed' });
-    if (status === 403) return new ChapaPermissionError({ ...details, code: 'permission_error', message: 'Chapa permission denied' });
-    if (status === 429) return new ChapaRateLimitError({ ...details, code: 'rate_limit_error', message: 'Chapa rate limit exceeded' });
+    if (status === 401) {
+      return new ChapaAuthenticationError({
+        ...details,
+        code: 'authentication_error',
+        message: 'Chapa authentication failed'
+      });
+    }
+    if (status === 403) {
+      return new ChapaPermissionError({ ...details, code: 'permission_error', message: 'Chapa permission denied' });
+    }
+    if (status === 429) {
+      return new ChapaRateLimitError({ ...details, code: 'rate_limit_error', message: 'Chapa rate limit exceeded' });
+    }
     return new ChapaApiError({ ...details, code: 'api_error', message: 'Chapa API request failed' });
   }
 
   #timeoutError(request: MutationExecutionRequest | SafeReadExecutionRequest, attempts: number, cause?: unknown) {
     return new ChapaTimeoutError({
-      code: 'timeout_error', message: 'Chapa request timed out', operation: request.policy.operation, method: request.policy.method, endpoint: request.policy.path,
-      ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}), attempts, retryable: false, cause
+      code: 'timeout_error',
+      message: 'Chapa request timed out',
+      operation: request.policy.operation,
+      method: request.policy.method,
+      endpoint: request.policy.path,
+      ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}),
+      attempts,
+      retryable: false,
+      cause
     });
   }
 
   #abortError(request: MutationExecutionRequest | SafeReadExecutionRequest, attempts: number, cause?: unknown) {
     return new ChapaAbortError({
-      code: 'abort_error', message: 'Chapa request was aborted', operation: request.policy.operation, method: request.policy.method, endpoint: request.policy.path,
-      ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}), attempts, retryable: false, cause
+      code: 'abort_error',
+      message: 'Chapa request was aborted',
+      operation: request.policy.operation,
+      method: request.policy.method,
+      endpoint: request.policy.path,
+      ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}),
+      attempts,
+      retryable: false,
+      cause
     });
   }
 

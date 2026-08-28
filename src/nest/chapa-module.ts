@@ -8,15 +8,22 @@ import { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } from './module-definiti
 import { CHAPA_LOGGER, CHAPA_TRANSPORT } from './tokens.js';
 
 const NOOP_LOGGER: ChapaLogger = Object.freeze({ debug() {}, info() {}, warn() {}, error() {} });
+/** Nest asynchronous registration options supporting `useFactory`, `useClass`, and `useExisting`.
+ * @public
+ */
 export type ChapaModuleAsyncOptions = ConfigurableModuleAsyncOptions<ChapaModuleOptions>;
 
+/** Nest dynamic module that owns SDK configuration and provider wiring.
+ * @public
+ */
 @Module({
   providers: [
     ChapaService,
     {
       provide: CHAPA_TRANSPORT,
       inject: [MODULE_OPTIONS_TOKEN],
-      useFactory: (options: { readonly transport?: ChapaTransport }): ChapaTransport => options.transport ?? new FetchTransport()
+      useFactory: (options: { readonly transport?: ChapaTransport }): ChapaTransport =>
+        options.transport ?? new FetchTransport()
     },
     {
       provide: CHAPA_LOGGER,
@@ -27,10 +34,12 @@ export type ChapaModuleAsyncOptions = ConfigurableModuleAsyncOptions<ChapaModule
   exports: [ChapaService, CHAPA_TRANSPORT, CHAPA_LOGGER]
 })
 export class ChapaModule {
+  /** Registers one Chapa service instance from synchronous options. */
   static register(options: ChapaModuleOptions): DynamicModule {
     return { ...ConfigurableModuleClass.register(options), module: ChapaModule };
   }
 
+  /** Registers one Chapa service instance from Nest-managed asynchronous options. */
   static registerAsync(options: ChapaModuleAsyncOptions): DynamicModule {
     return { ...ConfigurableModuleClass.registerAsync(options), module: ChapaModule };
   }
