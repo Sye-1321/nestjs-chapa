@@ -6,7 +6,6 @@
     "verbatimModuleSyntax": false,
     "noEmit": false,
     "declaration": true,
-    "stripInternal": true,
     "declarationMap": true,
     "sourceMap": true,
     "rootDir": "src",

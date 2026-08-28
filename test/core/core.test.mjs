@@ -105,6 +105,25 @@ test('configuration inspection and errors redact secrets', () => {
   assert.ok(!JSON.stringify(error).includes(secret));
 });
 
+test('malformed instrumentation hooks fail configuration before transport activity', () => {
+  let transportCalls = 0;
+  assert.throws(
+    () =>
+      configModule.resolveChapaConfiguration({
+        secretKey: 'synthetic-secret-value',
+        transport: {
+          send: async () => {
+            transportCalls += 1;
+            return response();
+          }
+        },
+        hooks: { onRequest: 'not-callable' }
+      }),
+    errors.ChapaConfigurationError
+  );
+  assert.equal(transportCalls, 0);
+});
+
 test('FetchTransport makes exactly one attempt and preserves raw bytes, headers, status, and duration', async () => {
   let calls = 0;
   const bytes = new Uint8Array([0, 255, 10, 13]);
@@ -157,9 +176,9 @@ test('successful response preserves attempts, duration, and caller correlationId
 });
 
 test('malformed JSON response carries safe request context and redacted raw material', async () => {
-  const body = new TextEncoder().encode('{"token":"synthetic-secret-value"');
+  const body = new TextEncoder().encode('token synthetic-secret-value');
   const { executor } = executorWith({
-    send: async () => ({ status: 200, headers: { 'content-type': 'application/json' }, body, durationMs: 1 })
+    send: async () => ({ status: 200, headers: { 'Content-Type': 'application/json' }, body, durationMs: 1 })
   });
   await assert.rejects(
     executor.execute({ policy: safePolicy, options: { maxRetries: 0, correlationId: 'corr-json' } }),
@@ -260,14 +279,14 @@ test('safe read does not retry ineligible HTTP status or unusable 429', async ()
   }
 });
 
-test('usable Retry-After enables bounded 429 retry', async () => {
+test('custom transport headers are case-insensitive for JSON parsing and Retry-After', async () => {
   let calls = 0;
   const delays = [];
   const { executor } = executorWith(
     {
       send: async () => {
         calls += 1;
-        return calls === 1 ? response(429, {}, { 'content-type': 'application/json', 'retry-after': '0' }) : response();
+        return calls === 1 ? response(429, {}, { 'Content-Type': 'application/json', 'Retry-After': '0' }) : response();
       }
     },
     {},
@@ -438,7 +457,7 @@ test('core imports no NestJS modules', async () => {
 test('internal client, executor, FetchTransport, retry machinery, and Zod stay outside public API', async () => {
   const root = await import('@sye1321/nestjs-chapa');
   for (const name of ['ChapaClient', 'ChapaRequestExecutor', 'FetchTransport']) assert.equal(root[name], undefined);
-  const report = await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8');
+  const report = await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.public.api.md'), 'utf8');
   assert.doesNotMatch(
     report,
     /ChapaClient|ChapaRequestExecutor|FetchTransport|SafeReadOperationPolicy|MutationOperationPolicy|\bz\.|Zod/

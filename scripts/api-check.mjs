@@ -19,6 +19,7 @@ async function extract(name, declaration, reportFolder, localBuild, reportName =
       apiReport: {
         enabled: true,
         reportFileName: reportName,
+        reportVariants: ['public'],
         reportFolder,
         reportTempFolder: '<projectFolder>/.artifacts/api-extractor/temp'
       },
@@ -55,8 +56,9 @@ for (const entry of [
     true,
     `${entry.name}.api.md`
   );
-  const esmReport = await readFile(resolve(baseline, `${entry.name}.api.md`), 'utf8');
-  const cjsReport = await readFile(resolve(temporary, 'reports', `${entry.name}.api.md`), 'utf8');
+  const reportFile = `${entry.name}.public.api.md`;
+  const esmReport = await readFile(resolve(baseline, reportFile), 'utf8');
+  const cjsReport = await readFile(resolve(temporary, 'reports', reportFile), 'utf8');
   const normalizeLineEndings = (report) => report.replace(/\r\n/g, '\n');
   if (normalizeLineEndings(esmReport) !== normalizeLineEndings(cjsReport)) {
     throw new Error(`ESM/CJS API surface mismatch for ${entry.name}`);

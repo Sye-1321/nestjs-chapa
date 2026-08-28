@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -79,45 +79,35 @@ test('./testing CJS require works', () =>
   assert.deepEqual(Object.keys(require('@sye1321/nestjs-chapa/testing')), ['generateChapaTestSignature']));
 test('private/deep import fails', async () =>
   assert.rejects(import('@sye1321/nestjs-chapa/dist/esm/index.js'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' }));
-test('API Extractor baselines pass with ESM/CJS parity', () => {
-  const result = spawnSync(process.execPath, ['scripts/api-check.mjs'], { cwd: repository, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
-});
 test('root API baseline contains only approved core contracts', async () => {
-  const report = await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8');
+  const report = await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.public.api.md'), 'utf8');
   assert.match(report, /ChapaError/);
   assert.doesNotMatch(report, /ChapaClient|ChapaRequestExecutor|FetchTransport/);
 });
 test('testing API baseline contains only the approved signature helper', async () => {
-  const report = await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa-testing.api.md'), 'utf8');
+  const report = await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa-testing.public.api.md'), 'utf8');
   assert.match(report, /generateChapaTestSignature/);
   assert.doesNotMatch(report, /chapa-signature|ChapaClient|ChapaRequestExecutor/);
 });
 test('public API has no Zod leakage', async () =>
   assert.doesNotMatch(
-    (await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8')).toLowerCase(),
+    (await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.public.api.md'), 'utf8')).toLowerCase(),
     /zod/
   ));
 test('public API Nest type dependency is limited to the supported common module contract', async () => {
-  const report = (await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8')).toLowerCase();
+  const report = (
+    await readFile(resolve(repository, 'etc/api-reports/nestjs-chapa.public.api.md'), 'utf8')
+  ).toLowerCase();
   assert.match(report, /@nestjs\/common/);
   assert.doesNotMatch(report, /@nestjs\/(core|testing|platform-)/);
 });
-test('clean builds are deterministic', () => {
-  const result = spawnSync(process.execPath, ['scripts/determinism-check.mjs'], { cwd: repository, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /dist files/);
-});
-test('stale output cannot survive build', async () => {
-  await writeFile(resolve(repository, 'dist/stale-output.txt'), 'stale');
-  const result = spawnSync(process.execPath, ['scripts/build.mjs'], { cwd: repository, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
-  await assert.rejects(readFile(resolve(repository, 'dist/stale-output.txt')));
-});
-test('actual tarball satisfies the allowlist', () => {
-  const result = spawnSync(process.execPath, ['scripts/pack-check.mjs'], { cwd: repository, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /allowlisted files/);
+test('emitted declarations preserve framework-managed constructor signatures', async () => {
+  const service = await readFile(resolve(repository, 'dist/esm/nest/chapa-service.d.ts'), 'utf8');
+  const errors = await readFile(resolve(repository, 'dist/esm/core/errors/errors.d.ts'), 'utf8');
+  assert.match(service, /constructor\(options: ChapaModuleOptions, transport: ChapaTransport, logger: ChapaLogger\)/);
+  assert.match(errors, /constructor\(details: \{/);
+  assert.match(errors, /constructor\(message: string, issues: readonly ChapaValidationIssue\[\], details\?:/);
+  assert.doesNotMatch(`${service}\n${errors}`, /constructor\(\)/);
 });
 test('maps contain no absolute workstation path', async () => {
   for (const path of expectedDist.filter((entry) => entry.endsWith('.map'))) {

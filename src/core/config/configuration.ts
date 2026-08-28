@@ -9,6 +9,10 @@ const DEFAULT_BASE_URL = 'https://api.chapa.co/v1';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_DELAY_MS = 5_000;
+const hookSchema = z.custom<(...args: never[]) => unknown>(
+  (value) => typeof value === 'function',
+  'hook must be callable'
+);
 
 const optionsSchema = z
   .object({
@@ -55,10 +59,13 @@ const optionsSchema = z
       )
       .optional(),
     hooks: z
-      .custom<ChapaInstrumentationHooks>(
-        (value) => Boolean(value && typeof value === 'object'),
-        'hooks must be an object'
-      )
+      .object({
+        onRequest: hookSchema.optional(),
+        onResponse: hookSchema.optional(),
+        onRetry: hookSchema.optional()
+      })
+      .strict()
+      .transform((value) => value as ChapaInstrumentationHooks)
       .optional(),
     allowInsecureTestUrls: z.boolean().optional()
   })

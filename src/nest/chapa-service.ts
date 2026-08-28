@@ -23,7 +23,10 @@ export class ChapaService {
   /** Local cryptographic transaction-reference generation. */
   readonly references: ChapaReferences;
 
-  /** @internal Constructed by Nest dependency injection. */
+  /**
+   * Constructed by Nest dependency injection.
+   * @internal
+   */
   constructor(
     @Inject(MODULE_OPTIONS_TOKEN) options: ChapaModuleOptions,
     @Inject(CHAPA_TRANSPORT) transport: ChapaTransport,

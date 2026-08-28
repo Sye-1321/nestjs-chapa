@@ -91,10 +91,17 @@ function parseRetryAfter(value: string | undefined, now = Date.now()): number | 
   return Number.isFinite(date) ? Math.max(0, date - now) : undefined;
 }
 
+function responseHeader(headers: ChapaTransportResponse['headers'], name: string): string | undefined {
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === name) return value;
+  }
+  return undefined;
+}
+
 function parseBody(response: ChapaTransportResponse): unknown {
   const text = new TextDecoder().decode(response.body);
   if (text.length === 0) return undefined;
-  const contentType = response.headers['content-type']?.toLowerCase();
+  const contentType = responseHeader(response.headers, 'content-type')?.toLowerCase();
   const looksJson = /^\s*[[{]/.test(text);
   if (contentType?.includes('json') || looksJson) {
     return JSON.parse(text) as unknown;
@@ -244,7 +251,8 @@ export class ChapaRequestExecutor {
         };
       }
 
-      const retryAfterMs = response.status === 429 ? parseRetryAfter(response.headers['retry-after']) : undefined;
+      const retryAfterMs =
+        response.status === 429 ? parseRetryAfter(responseHeader(response.headers, 'retry-after')) : undefined;
       const retryable =
         request.policy.retry === 'safe-read' &&
         (retryableStatuses.has(response.status) || (response.status === 429 && retryAfterMs !== undefined));
@@ -293,6 +301,7 @@ export class ChapaRequestExecutor {
     attempts: number,
     retryable: boolean
   ) {
+    const redactedRaw = this.#configuration.redact(raw);
     const details = {
       operation: request.policy.operation,
       method: request.policy.method,
@@ -301,8 +310,8 @@ export class ChapaRequestExecutor {
       ...(request.options?.correlationId ? { correlationId: request.options.correlationId } : {}),
       attempts,
       retryable,
-      raw: this.#configuration.redact(raw),
-      ...providerFields(this.#configuration.redact(raw))
+      raw: redactedRaw,
+      ...providerFields(redactedRaw)
     };
     if (status === 401) {
       return new ChapaAuthenticationError({

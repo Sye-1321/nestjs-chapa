@@ -169,7 +169,7 @@ test('metadata 404 remains generic ChapaApiError', async () => {
 test('metadata implementation stays internal while public contracts are exported', async () => {
   const publicRoot = await import('@sye1321/nestjs-chapa');
   assert.equal(publicRoot.MetadataResource, undefined);
-  const report = await readFile(resolve(root, 'etc/api-reports/nestjs-chapa.api.md'), 'utf8');
+  const report = await readFile(resolve(root, 'etc/api-reports/nestjs-chapa.public.api.md'), 'utf8');
   for (const contract of ['ChapaMetadata', 'ChapaBank', 'ListBanksResult', 'ChapaCurrency', 'ListCurrenciesResult'])
     assert.match(report, new RegExp(contract));
   assert.doesNotMatch(report, /class MetadataResource/);

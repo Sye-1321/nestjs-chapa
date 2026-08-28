@@ -4,7 +4,8 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@sye1321/nestjs-chapa": ["src/index.ts"]
+      "@sye1321/nestjs-chapa": ["src/index.ts"],
+      "@sye1321/nestjs-chapa/testing": ["src/testing/index.ts"]
     }
   },
   "include": ["examples/**/*.ts"]

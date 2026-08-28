@@ -1,10 +1,11 @@
-import { mkdir, readdir, rm } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const artifacts = resolve(repository, '.artifacts', 'pack');
 const environment = { ...process.env, npm_config_cache: resolve(repository, '.artifacts', 'npm-cache') };
+const manifest = JSON.parse(await readFile(resolve(repository, 'package.json'), 'utf8'));
 await rm(artifacts, { recursive: true, force: true });
 await mkdir(artifacts, { recursive: true });
 
@@ -41,7 +42,7 @@ expected.sort();
 const dryRun = pack(['pack', '--dry-run', '--json']);
 const actual = pack(['pack', '--json', '--pack-destination', artifacts]);
 for (const result of [dryRun, actual]) {
-  if (result.name !== '@sye1321/nestjs-chapa' || result.version !== '0.0.0')
+  if (result.name !== manifest.name || result.version !== manifest.version)
     throw new Error('incorrect packed identity');
   const paths = result.files.map(({ path }) => path.replaceAll('\\', '/')).sort();
   if (JSON.stringify(paths) !== JSON.stringify(expected)) {

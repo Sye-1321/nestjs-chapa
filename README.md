@@ -29,14 +29,12 @@ import { ChapaModule } from '@sye1321/nestjs-chapa';
 export class AppModule {}
 ```
 
-Use `registerAsync` with Nest configuration providers:
+Use `registerAsync` with a Nest-managed factory:
 
 ```ts
 ChapaModule.registerAsync({
-  inject: [AppConfig],
-  useFactory: (config: AppConfig) => ({
-    secretKey: config.chapaSecretKey,
-    webhookSecret: config.chapaWebhookSecret
+  useFactory: (): ChapaModuleOptions => ({
+    secretKey: 'CHASECK_TEST-FICTIONAL'
   })
 });
 ```
@@ -72,6 +70,10 @@ if (payment.status === 'success' && payment.amount === '125.50' && payment.curre
 
 Initialization (`POST`) and cancellation (`PUT`) are never retried. A timeout or network failure during initialization is an uncertain outcome: do not create a replacement transaction blindly. Verification is a safe `GET` and may receive bounded retries. An HTTP 404 remains a `ChapaApiError`; it is not converted to `pending`.
 
+Callback and return redirects are application navigation signals, not authoritative proof of payment. They are distinct from webhooks, and the host must verify the transaction before fulfilment.
+
+The host application owns `txRef` uniqueness. V1 has no stable duplicate-reference discriminator: a provider collision remains a generic `ChapaApiError`. Do not parse provider message text as a duplicate code or automatically replay initialization.
+
 Cancellation expires the hosted checkout under the supported contract. It does not prove a universal cancelled transaction state. Verify before making business decisions.
 
 Metadata lookups are available through `chapa.metadata.listBanks()` and `listCurrencies()`. They are provider reads and are not cached. `chapa.references.generate()` is local and makes no provider request.
@@ -83,13 +85,15 @@ Verification requires the exact incoming bytes. Never parse and reserialize JSON
 Express applications can enable Nest's raw-body support:
 
 ```ts
-const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+return NestFactory.create<NestExpressApplication>(SynchronousExampleModule, { rawBody: true });
 ```
 
 Fastify uses the same Nest option:
 
 ```ts
-const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), { rawBody: true });
+return NestFactory.create<NestFastifyApplication>(SynchronousExampleModule, new FastifyAdapter(), {
+  rawBody: true
+});
 ```
 
 Pass the `RawBodyRequest` bytes and incoming headers to the verifier:
@@ -103,7 +107,36 @@ const verified = this.chapa.webhooks.verify({
 
 Signature verification authenticates bytes; it does not fulfil an order for you. Store webhook processing state, enforce idempotency, verify the transaction when appropriate, and compare the expected reference, amount, and currency.
 
-Tests can import `generateChapaTestSignature` from `@sye1321/nestjs-chapa/testing`. Use fictional secrets only.
+The complete Express and Fastify raw-body examples are compile-checked in [`examples/express-webhook.ts`](examples/express-webhook.ts) and [`examples/fastify-webhook.ts`](examples/fastify-webhook.ts).
+
+## Testing
+
+Override the transport to keep unit tests deterministic and provider-offline:
+
+```ts
+const mockTransport: ChapaTransport = {
+  send(request) {
+    if (request.method !== 'GET') throw new Error(`unexpected ${request.method} request`);
+    return Promise.resolve(response);
+  }
+};
+
+const testingModule = ChapaModule.register({
+  secretKey: 'CHASECK_TEST-FICTIONAL',
+  transport: mockTransport
+});
+```
+
+Generate a signature for exact fictional webhook bytes with the testing entry point:
+
+```ts
+const signature = generateChapaTestSignature({
+  rawBody,
+  secret: 'fictional-webhook-secret'
+});
+```
+
+Both fragments are compile-backed by [`examples/testing.ts`](examples/testing.ts). Never use production credentials in fixtures.
 
 ## Errors and advanced overrides
 
@@ -124,4 +157,4 @@ pnpm changeset:status
 
 `pnpm verify` is the complete provider-offline maintainer gate. `pnpm test` runs the complete SDK test and packed-consumer suite from a clean checkout, while commands such as `pnpm test:payments`, `pnpm test:webhooks`, and `pnpm test:nest` provide focused feedback.
 
-Canonical TypeScript usage is compile-checked from [`examples/sdk-usage.ts`](examples/sdk-usage.ts). See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the normative [technical specification](docs/specification/TECHNICAL_SPECIFICATION.md).
+Every canonical TypeScript example is compiled from [`examples/`](examples). See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the normative [technical specification](docs/specification/TECHNICAL_SPECIFICATION.md).

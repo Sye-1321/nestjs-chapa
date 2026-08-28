@@ -11,22 +11,6 @@ export interface ChapaValidationIssue {
   readonly message: string;
 }
 
-interface ChapaErrorDetails {
-  readonly code: string;
-  readonly message: string;
-  readonly operation?: ChapaOperation;
-  readonly method?: ChapaHttpMethod;
-  readonly endpoint?: string;
-  readonly httpStatus?: number;
-  readonly chapaStatus?: string;
-  readonly chapaMessage?: string;
-  readonly correlationId?: string;
-  readonly attempts?: number;
-  readonly retryable: boolean;
-  readonly cause?: unknown;
-  readonly raw?: unknown;
-}
-
 /** Base class for all errors intentionally surfaced by the SDK.
  * @public
  */
@@ -54,8 +38,25 @@ export class ChapaError extends Error {
   /** Redacted provider material retained for diagnostics. */
   readonly raw: unknown;
 
-  /** @internal SDK error construction is not a supported consumer API. */
-  constructor(details: ChapaErrorDetails) {
+  /**
+   * SDK error construction is not a supported consumer API.
+   * @internal
+   */
+  constructor(details: {
+    readonly code: string;
+    readonly message: string;
+    readonly operation?: ChapaOperation;
+    readonly method?: ChapaHttpMethod;
+    readonly endpoint?: string;
+    readonly httpStatus?: number;
+    readonly chapaStatus?: string;
+    readonly chapaMessage?: string;
+    readonly correlationId?: string;
+    readonly attempts?: number;
+    readonly retryable: boolean;
+    readonly cause?: unknown;
+    readonly raw?: unknown;
+  }) {
     super(details.message, { cause: safeCause(details.cause) });
     this.name = new.target.name;
     this.code = details.code;
@@ -139,11 +140,26 @@ export class ChapaValidationError extends ChapaError {
   /** All validation issues detected for the input. */
   readonly issues: readonly ChapaValidationIssue[];
 
-  /** @internal Created by SDK validation boundaries. */
+  /**
+   * Created by SDK validation boundaries.
+   * @internal
+   */
   constructor(
     message: string,
     issues: readonly ChapaValidationIssue[],
-    details: Omit<ChapaErrorDetails, 'code' | 'message'> = { retryable: false }
+    details: {
+      readonly operation?: ChapaOperation;
+      readonly method?: ChapaHttpMethod;
+      readonly endpoint?: string;
+      readonly httpStatus?: number;
+      readonly chapaStatus?: string;
+      readonly chapaMessage?: string;
+      readonly correlationId?: string;
+      readonly attempts?: number;
+      readonly retryable: boolean;
+      readonly cause?: unknown;
+      readonly raw?: unknown;
+    } = { retryable: false }
   ) {
     super({ ...details, code: 'validation_error', message });
     this.issues = issues;
