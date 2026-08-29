@@ -36,10 +36,17 @@ jobs:
         shell: bash
         run: |
           test "$(node -p "require('./package.json').name")" = '@sye1321/nestjs-chapa'
-          if npm view @sye1321/nestjs-chapa name >/dev/null 2>&1; then
+          lookup_error="$(mktemp)"
+          if npm view @sye1321/nestjs-chapa name >/dev/null 2>"${lookup_error}"; then
             echo 'Package already exists; bootstrap is permanently disabled.'
             exit 1
+          elif grep -Eq '^npm (error|ERR!) code E404|404 Not Found - GET https://registry\.npmjs\.org/' "${lookup_error}"; then
+            echo 'Registry confirmed the package does not exist; bootstrap may continue.'
+          else
+            echo 'npm registry lookup failed without a confirmed E404; refusing to bootstrap.'
+            exit 1
           fi
+          rm -f "${lookup_error}"
       - name: Provider-offline quality gates
         env:
           CHAPA_SECRET_KEY: ''

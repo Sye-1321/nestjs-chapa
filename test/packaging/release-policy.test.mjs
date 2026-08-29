@@ -14,6 +14,9 @@ test('release workflow is manual, OIDC-enabled, and token-free', async () => {
   assert.doesNotMatch(workflow, /NPM_TOKEN|NODE_AUTH_TOKEN|NPM_BOOTSTRAP_TOKEN/);
   assert.match(workflow, /npm publish [^\n]*--tag rc/);
   assert.doesNotMatch(workflow, /--tag latest/);
+  assert.doesNotMatch(workflow, /npm view[^\n]*\|\| true/);
+  assert.match(workflow, /if existing="\$\(npm view[\s\S]*?elif grep -Eq '[^']*code E404[^']*'/);
+  assert.match(workflow, /lookup failed without a confirmed E404; refusing to publish/);
 });
 
 test('bootstrap workflow is manual, protected, and cannot assign latest', async () => {
@@ -24,6 +27,8 @@ test('bootstrap workflow is manual, protected, and cannot assign latest', async 
   assert.match(workflow, /--tag bootstrap --provenance/);
   assert.doesNotMatch(workflow, /--tag latest/);
   assert.match(workflow, /t\.latest/);
+  assert.match(workflow, /if npm view @sye1321\/nestjs-chapa[\s\S]*?elif grep -Eq '[^']*code E404[^']*'/);
+  assert.match(workflow, /lookup failed without a confirmed E404; refusing to bootstrap/);
 });
 
 test('normal CI remains provider-offline and cannot invoke sandbox smoke', async () => {

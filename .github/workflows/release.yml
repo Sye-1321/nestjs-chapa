@@ -100,7 +100,17 @@ jobs:
           version="${{ steps.candidate.outputs.version }}"
           tarball=".artifacts/release/sye1321-nestjs-chapa-${version}.tgz"
           expected="$(cat .artifacts/release/integrity.txt)"
-          existing="$(npm view "@sye1321/nestjs-chapa@${version}" dist.integrity 2>/dev/null || true)"
+          lookup_error="$(mktemp)"
+          if existing="$(npm view "@sye1321/nestjs-chapa@${version}" dist.integrity 2>"${lookup_error}")"; then
+            test -n "${existing}"
+          elif grep -Eq '^npm (error|ERR!) code E404|404 Not Found - GET https://registry\.npmjs\.org/' "${lookup_error}"; then
+            existing=''
+            echo 'Registry confirmed the exact version does not exist; publication may continue.'
+          else
+            echo 'npm registry lookup failed without a confirmed E404; refusing to publish.'
+            exit 1
+          fi
+          rm -f "${lookup_error}"
           if [ -z "${existing}" ]; then
             npm publish "${tarball}" --access public --tag rc
             existing="$(npm view "@sye1321/nestjs-chapa@${version}" dist.integrity)"
