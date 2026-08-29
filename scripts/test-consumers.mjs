@@ -1,6 +1,6 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { consumerMatrix } from '../test/consumers/matrix.mjs';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
@@ -14,13 +14,14 @@ const environment = {
 };
 
 function run(command, args, cwd, options = {}) {
-  const npmCli = resolve(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
-  const executable = command === 'npm' ? process.execPath : command;
-  const commandArguments = command === 'npm' ? [npmCli, ...args] : args;
-  const result = spawnSync(executable, commandArguments, {
+  const isNpm = command === 'npm';
+  const windowsNpm = isNpm && process.platform === 'win32';
+  const executable = isNpm ? (windowsNpm ? 'npm.cmd' : 'npm') : command;
+  const result = spawnSync(executable, args, {
     cwd,
     env: environment,
     encoding: 'utf8',
+    shell: windowsNpm,
     ...options
   });
   if (result.status !== 0) {
