@@ -4,6 +4,8 @@ A community-maintained NestJS integration for Chapa. It is not an official Chapa
 
 The package supports Node.js 22 and 24 with NestJS 10 or 11. Refunds, transfers, subaccounts, subscriptions, FX, and tax features are outside V1.
 
+For deployment safety, lifecycle recovery, retry boundaries, webhook security, and operational ownership, read the [production integration guide](docs/guides/production-integration.md).
+
 ## Install
 
 ```sh
@@ -48,6 +50,8 @@ export class CheckoutService {
 }
 ```
 
+The default API base URL is `https://api.chapa.co/v1`. A custom `baseUrl` receives your configured authorization credential: use one only for a trusted, controlled proxy or testing, and never send production credentials to an untrusted host. Insecure URLs remain explicitly limited to enabled local testing.
+
 ## Payments
 
 The safe flow is initialize → redirect → verify → fulfil:
@@ -75,6 +79,8 @@ Callback and return redirects are application navigation signals, not authoritat
 The host application owns `txRef` uniqueness. V1 has no stable duplicate-reference discriminator: a provider collision remains a generic `ChapaApiError`. Do not parse provider message text as a duplicate code or automatically replay initialization.
 
 Cancellation expires the hosted checkout under the supported contract. It does not prove a universal cancelled transaction state. Verify before making business decisions.
+
+Provider refund creation and verification require a separate approved evidence milestone and a corresponding technical-specification revision before they can become supported SDK behavior.
 
 Metadata lookups are available through `chapa.metadata.listBanks()` and `listCurrencies()`. They are provider reads and are not cached. `chapa.references.generate()` is local and makes no provider request.
 
