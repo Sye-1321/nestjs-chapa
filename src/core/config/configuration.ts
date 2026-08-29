@@ -9,27 +9,67 @@ const DEFAULT_BASE_URL = 'https://api.chapa.co/v1';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_DELAY_MS = 5_000;
+const hookSchema = z.custom<(...args: never[]) => unknown>(
+  (value) => typeof value === 'function',
+  'hook must be callable'
+);
 
-const optionsSchema = z.object({
-  secretKey: z.string().trim().min(1, 'secretKey is required'),
-  webhookSecret: z.string().refine((value) => value.trim().length > 0, 'webhookSecret must not be blank').optional(),
-  baseUrl: z.string().url('baseUrl must be a valid URL').optional(),
-  timeoutMs: z.number().int().min(1).max(300_000).optional(),
-  retry: z.object({
-    maxSafeRetries: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional(),
-    baseDelayMs: z.number().int().min(0).max(60_000).optional(),
-    maxDelayMs: z.number().int().min(0).max(300_000).optional(),
-    jitter: z.boolean().optional()
-  }).strict().optional(),
-  logging: z.object({
-    enabled: z.boolean().optional(),
-    level: z.enum(['error', 'warn', 'info', 'debug']).optional()
-  }).strict().optional(),
-  transport: z.custom<ChapaTransport>((value) => Boolean(value && typeof value === 'object' && typeof (value as ChapaTransport).send === 'function'), 'transport must implement send()').optional(),
-  logger: z.custom<ChapaLogger>((value) => Boolean(value && typeof value === 'object' && ['debug', 'info', 'warn', 'error'].every((key) => typeof (value as unknown as Record<string, unknown>)[key] === 'function')), 'logger methods must be callable').optional(),
-  hooks: z.custom<ChapaInstrumentationHooks>((value) => Boolean(value && typeof value === 'object'), 'hooks must be an object').optional(),
-  allowInsecureTestUrls: z.boolean().optional()
-}).strict();
+const optionsSchema = z
+  .object({
+    secretKey: z.string().trim().min(1, 'secretKey is required'),
+    webhookSecret: z
+      .string()
+      .refine((value) => value.trim().length > 0, 'webhookSecret must not be blank')
+      .optional(),
+    baseUrl: z.string().url('baseUrl must be a valid URL').optional(),
+    timeoutMs: z.number().int().min(1).max(300_000).optional(),
+    retry: z
+      .object({
+        maxSafeRetries: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional(),
+        baseDelayMs: z.number().int().min(0).max(60_000).optional(),
+        maxDelayMs: z.number().int().min(0).max(300_000).optional(),
+        jitter: z.boolean().optional()
+      })
+      .strict()
+      .optional(),
+    logging: z
+      .object({
+        enabled: z.boolean().optional(),
+        level: z.enum(['error', 'warn', 'info', 'debug']).optional()
+      })
+      .strict()
+      .optional(),
+    transport: z
+      .custom<ChapaTransport>(
+        (value) => Boolean(value && typeof value === 'object' && typeof (value as ChapaTransport).send === 'function'),
+        'transport must implement send()'
+      )
+      .optional(),
+    logger: z
+      .custom<ChapaLogger>(
+        (value) =>
+          Boolean(
+            value &&
+            typeof value === 'object' &&
+            ['debug', 'info', 'warn', 'error'].every(
+              (key) => typeof (value as unknown as Record<string, unknown>)[key] === 'function'
+            )
+          ),
+        'logger methods must be callable'
+      )
+      .optional(),
+    hooks: z
+      .object({
+        onRequest: hookSchema.optional(),
+        onResponse: hookSchema.optional(),
+        onRetry: hookSchema.optional()
+      })
+      .strict()
+      .transform((value) => value as ChapaInstrumentationHooks)
+      .optional(),
+    allowInsecureTestUrls: z.boolean().optional()
+  })
+  .strict();
 
 export interface ResolvedRetryConfiguration {
   readonly maxSafeRetries: 0 | 1 | 2;
@@ -63,13 +103,24 @@ export class ResolvedChapaConfiguration {
       });
     }
     const baseUrl = new URL(parsed.data.baseUrl ?? DEFAULT_BASE_URL);
-    if (baseUrl.protocol !== 'https:' && !(parsed.data.allowInsecureTestUrls && ['localhost', '127.0.0.1', '[::1]'].includes(baseUrl.hostname))) {
-      throw new ChapaConfigurationError({ code: 'configuration_error', message: 'Invalid Chapa configuration', retryable: false });
+    if (
+      baseUrl.protocol !== 'https:' &&
+      !(parsed.data.allowInsecureTestUrls && ['localhost', '127.0.0.1', '[::1]'].includes(baseUrl.hostname))
+    ) {
+      throw new ChapaConfigurationError({
+        code: 'configuration_error',
+        message: 'Invalid Chapa configuration',
+        retryable: false
+      });
     }
     const baseDelayMs = parsed.data.retry?.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
     const maxDelayMs = parsed.data.retry?.maxDelayMs ?? DEFAULT_MAX_DELAY_MS;
     if (maxDelayMs < baseDelayMs) {
-      throw new ChapaConfigurationError({ code: 'configuration_error', message: 'Invalid Chapa configuration', retryable: false });
+      throw new ChapaConfigurationError({
+        code: 'configuration_error',
+        message: 'Invalid Chapa configuration',
+        retryable: false
+      });
     }
     this.#secretKey = parsed.data.secretKey;
     this.#webhookSecret = parsed.data.webhookSecret;
@@ -100,7 +151,10 @@ export class ResolvedChapaConfiguration {
   }
 
   redact(value: unknown): unknown {
-    return redactSensitive(value, [this.#secretKey, this.#webhookSecret].filter((value): value is string => value !== undefined));
+    return redactSensitive(
+      value,
+      [this.#secretKey, this.#webhookSecret].filter((value): value is string => value !== undefined)
+    );
   }
 
   [inspect.custom](): string {

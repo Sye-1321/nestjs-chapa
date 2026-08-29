@@ -1,12 +1,21 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { ResolvedChapaConfiguration } from '../config/configuration.js';
-import { ChapaConfigurationError, ChapaResponseError, ChapaValidationError, ChapaWebhookSignatureError } from '../errors/errors.js';
+import {
+  ChapaConfigurationError,
+  ChapaResponseError,
+  ChapaValidationError,
+  ChapaWebhookSignatureError
+} from '../errors/errors.js';
 import type { ChapaWebhookEvent, ChapaWebhooks, VerifiedWebhook, VerifyWebhookInput } from './types.js';
 
 const HEX_SIGNATURE = /^[0-9A-Fa-f]{64}$/;
 
 function signatureError(): ChapaWebhookSignatureError {
-  return new ChapaWebhookSignatureError({ code: 'webhook_signature_error', message: 'Invalid webhook signature', retryable: false });
+  return new ChapaWebhookSignatureError({
+    code: 'webhook_signature_error',
+    message: 'Invalid webhook signature',
+    retryable: false
+  });
 }
 
 function header(headers: VerifyWebhookInput['headers'], name: string): string | undefined {
@@ -32,7 +41,11 @@ function usableString(value: unknown): value is string {
 
 function normalize(raw: Record<string, unknown>): ChapaWebhookEvent {
   if (!usableString(raw.event)) {
-    throw new ChapaResponseError({ code: 'response_error', message: 'Webhook payload has no usable event', retryable: false });
+    throw new ChapaResponseError({
+      code: 'response_error',
+      message: 'Webhook payload has no usable event',
+      retryable: false
+    });
   }
   const common = {
     event: raw.event,
@@ -42,7 +55,8 @@ function normalize(raw: Record<string, unknown>): ChapaWebhookEvent {
     ...(usableString(raw.currency) ? { currency: raw.currency } : {}),
     raw
   };
-  if (raw.event === 'charge.success' && raw.status === 'success') return { ...common, event: 'charge.success', status: 'success' };
+  if (raw.event === 'charge.success' && raw.status === 'success')
+    return { ...common, event: 'charge.success', status: 'success' };
   return common;
 }
 
@@ -51,15 +65,23 @@ export class WebhooksResource implements ChapaWebhooks {
 
   verify(input: VerifyWebhookInput): VerifiedWebhook {
     if (!input || (!Buffer.isBuffer(input.rawBody) && !(input.rawBody instanceof Uint8Array))) {
-      throw new ChapaValidationError('Invalid webhook input', [{ path: ['rawBody'], message: 'rawBody must be Buffer or Uint8Array' }]);
+      throw new ChapaValidationError('Invalid webhook input', [
+        { path: ['rawBody'], message: 'rawBody must be Buffer or Uint8Array' }
+      ]);
     }
     const rawBody = Buffer.from(input.rawBody);
     const secret = input.secret !== undefined ? input.secret : this.configuration.webhookSecret();
     if (typeof secret !== 'string' || secret.trim().length === 0) {
-      throw new ChapaConfigurationError({ code: 'configuration_error', message: 'Webhook verification is not configured', retryable: false });
+      throw new ChapaConfigurationError({
+        code: 'configuration_error',
+        message: 'Webhook verification is not configured',
+        retryable: false
+      });
     }
     if (!input.headers || typeof input.headers !== 'object') {
-      throw new ChapaValidationError('Invalid webhook input', [{ path: ['headers'], message: 'headers must be an object' }]);
+      throw new ChapaValidationError('Invalid webhook input', [
+        { path: ['headers'], message: 'headers must be an object' }
+      ]);
     }
     const primary = header(input.headers, 'x-chapa-signature');
     const signature = verifyDigest(primary, createHmac('sha256', secret).update(rawBody).digest());
@@ -70,10 +92,18 @@ export class WebhooksResource implements ChapaWebhooks {
     try {
       parsed = JSON.parse(rawBody.toString('utf8'));
     } catch {
-      throw new ChapaResponseError({ code: 'response_error', message: 'Webhook payload is not valid JSON', retryable: false });
+      throw new ChapaResponseError({
+        code: 'response_error',
+        message: 'Webhook payload is not valid JSON',
+        retryable: false
+      });
     }
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new ChapaResponseError({ code: 'response_error', message: 'Webhook payload must be an object', retryable: false });
+      throw new ChapaResponseError({
+        code: 'response_error',
+        message: 'Webhook payload must be an object',
+        retryable: false
+      });
     }
     return { verifiedBy: 'x-chapa-signature', event: normalize(parsed as Record<string, unknown>), rawBody, signature };
   }

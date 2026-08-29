@@ -2,10 +2,32 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 const { ReferencesResource } = await import('../../dist/esm/core/references/references-resource.js');
 const { ChapaValidationError } = await import('../../dist/esm/core/errors/errors.js');
-test('default reference uses cryptographic path and exact SDK grammar', () => { assert.match(new ReferencesResource().generate(), /^[A-Za-z0-9_]{32}$/); });
-test('requested size means random body length', () => { assert.equal(new ReferencesResource(() => 0).generate({ size: 7 }), 'AAAAAAA'); });
-test('prefix receives default or explicit separator', () => { const r = new ReferencesResource(() => 1); assert.equal(r.generate({ prefix: 'order', size: 3 }), 'order_BBB'); assert.equal(r.generate({ prefix: 'order', separator: '__', size: 2 }), 'order__BB'); });
-test('maximum total length 50 is accepted and greater total is rejected', () => { const r = new ReferencesResource(() => 2); assert.equal(r.generate({ prefix: 'P'.repeat(17), size: 32 }).length, 50); assert.throws(() => r.generate({ prefix: 'P'.repeat(18), size: 32 }), ChapaValidationError); });
-test('invalid prefix and separator alphabet reject while empty separator with prefix is allowed', () => { const r = new ReferencesResource(() => 0); assert.throws(() => r.generate({ prefix: 'bad-prefix' }), ChapaValidationError); assert.throws(() => r.generate({ prefix: 'ok', separator: '-' }), ChapaValidationError); assert.equal(r.generate({ prefix: 'order', separator: '', size: 2 }), 'orderAA'); });
-test('separator without prefix rejects', () => { assert.throws(() => new ReferencesResource().generate({ separator: '_' }), ChapaValidationError); });
-test('size must be a positive integer', () => { for (const size of [0, -1, 1.5, Number.NaN]) assert.throws(() => new ReferencesResource().generate({ size }), ChapaValidationError); });
+test('default reference uses cryptographic path and exact SDK grammar', () => {
+  assert.match(new ReferencesResource().generate(), /^[A-Za-z0-9_]{32}$/);
+});
+test('requested size means random body length', () => {
+  assert.equal(new ReferencesResource(() => 0).generate({ size: 7 }), 'AAAAAAA');
+});
+test('prefix receives default or explicit separator', () => {
+  const r = new ReferencesResource(() => 1);
+  assert.equal(r.generate({ prefix: 'order', size: 3 }), 'order_BBB');
+  assert.equal(r.generate({ prefix: 'order', separator: '__', size: 2 }), 'order__BB');
+});
+test('maximum total length 50 is accepted and greater total is rejected', () => {
+  const r = new ReferencesResource(() => 2);
+  assert.equal(r.generate({ prefix: 'P'.repeat(17), size: 32 }).length, 50);
+  assert.throws(() => r.generate({ prefix: 'P'.repeat(18), size: 32 }), ChapaValidationError);
+});
+test('invalid prefix and separator alphabet reject while empty separator with prefix is allowed', () => {
+  const r = new ReferencesResource(() => 0);
+  assert.throws(() => r.generate({ prefix: 'bad-prefix' }), ChapaValidationError);
+  assert.throws(() => r.generate({ prefix: 'ok', separator: '-' }), ChapaValidationError);
+  assert.equal(r.generate({ prefix: 'order', separator: '', size: 2 }), 'orderAA');
+});
+test('separator without prefix rejects', () => {
+  assert.throws(() => new ReferencesResource().generate({ separator: '_' }), ChapaValidationError);
+});
+test('size must be a positive integer', () => {
+  for (const size of [0, -1, 1.5, Number.NaN])
+    assert.throws(() => new ReferencesResource().generate({ size }), ChapaValidationError);
+});

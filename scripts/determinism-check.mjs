@@ -27,7 +27,6 @@ async function snapshot() {
   return files.sort(([a], [b]) => a.localeCompare(b));
 }
 
-build();
 const first = await snapshot();
 build();
 const second = await snapshot();
