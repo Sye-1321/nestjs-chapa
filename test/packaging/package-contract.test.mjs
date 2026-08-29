@@ -37,7 +37,15 @@ function runNode(script, cwd = repository) {
 
 test('package identity is frozen', () => assert.equal(manifest.name, '@sye1321/nestjs-chapa'));
 test('Node engines are frozen', () => assert.equal(manifest.engines.node, '^22.0.0 || ^24.0.0'));
-test('package remains private', () => assert.equal(manifest.private, true));
+test('package is explicitly configured for public publication', () => {
+  assert.notEqual(manifest.private, true);
+  assert.deepEqual(manifest.publishConfig, { access: 'public' });
+});
+test('Changesets is configured for public publication', async () => {
+  const config = JSON.parse(await readFile(resolve(repository, '.changeset/config.json'), 'utf8'));
+  assert.equal(config.access, 'public');
+  assert.equal(config.privatePackages, undefined);
+});
 test('exports have the exact allowlist', () => assert.deepEqual(Object.keys(manifest.exports), expectedExports));
 test('exports contain no wildcard', () => assert.ok(Object.keys(manifest.exports).every((key) => !key.includes('*'))));
 test('package.json is not exported', () => assert.equal(manifest.exports['./package.json'], undefined));

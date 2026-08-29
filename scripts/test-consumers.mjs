@@ -7,6 +7,12 @@ const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(
 const artifacts = resolve(repository, '.artifacts');
 const packageDirectory = resolve(artifacts, 'consumer-package');
 const consumersDirectory = resolve(artifacts, 'consumers');
+const packageSpecIndex = process.argv.indexOf('--package-spec');
+const packageSpec = packageSpecIndex === -1 ? undefined : process.argv[packageSpecIndex + 1];
+if (packageSpecIndex !== -1 && (!packageSpec || packageSpec.startsWith('--')))
+  throw new Error('--package-spec requires an explicit npm package spec');
+if (packageSpec && !/^@sye1321\/nestjs-chapa@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageSpec))
+  throw new Error('--package-spec must identify an exact @sye1321/nestjs-chapa version');
 const environment = {
   ...process.env,
   CHAPA_SECRET_KEY: undefined,
@@ -35,10 +41,14 @@ function run(command, args, cwd, options = {}) {
 
 await rm(packageDirectory, { recursive: true, force: true });
 await rm(consumersDirectory, { recursive: true, force: true });
-await mkdir(packageDirectory, { recursive: true });
+if (!packageSpec) await mkdir(packageDirectory, { recursive: true });
 await mkdir(consumersDirectory, { recursive: true });
-const packed = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', packageDirectory], repository))[0];
-const tarball = resolve(packageDirectory, packed.filename).replaceAll('\\', '/');
+const dependencySpec = packageSpec
+  ? packageSpec
+  : `file:${resolve(
+      packageDirectory,
+      JSON.parse(run('npm', ['pack', '--json', '--pack-destination', packageDirectory], repository))[0].filename
+    ).replaceAll('\\', '/')}`;
 
 for (const fixture of consumerMatrix) {
   const consumer = resolve(consumersDirectory, fixture.id);
@@ -52,7 +62,7 @@ for (const fixture of consumerMatrix) {
         dependencies: {
           '@nestjs/common': fixture.nestVersion,
           '@nestjs/core': fixture.nestVersion,
-          '@sye1321/nestjs-chapa': `file:${tarball}`,
+          '@sye1321/nestjs-chapa': dependencySpec,
           '@types/node': '24.10.1',
           'reflect-metadata': '0.2.2',
           rxjs: '7.8.2',
@@ -172,4 +182,8 @@ if (process.argv.includes('--floors')) {
 }
 
 await rm(packageDirectory, { recursive: true, force: true });
-console.log('Permanent four-consumer matrix passed; generated tarball removed.');
+console.log(
+  packageSpec
+    ? `Permanent four-consumer matrix passed against ${packageSpec}.`
+    : 'Permanent four-consumer matrix passed; generated tarball removed.'
+);

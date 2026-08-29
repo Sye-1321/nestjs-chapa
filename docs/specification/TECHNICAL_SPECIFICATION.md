@@ -1104,7 +1104,7 @@ The Appendix F fixture manifest contains the three actual M0.5-B JSON fixtures. 
 
 ## 17.4 Publication
 
-**[REQ-PKG-13]** Publish through npm trusted publishing from GitHub Actions. The release workflow generates provenance, creates the GitHub release, publishes the package, and verifies the published version and tarball.
+**[REQ-PKG-13]** Publish prerelease and stable versions through npm trusted publishing from GitHub Actions. The release workflow generates provenance, creates the GitHub release, publishes the package, and verifies the published version and tarball. A one-time, non-release namespace bootstrap may use a short-lived granular token only because npm requires the package to exist before a Trusted Publisher can be configured; it must run in protected GitHub Actions, include provenance, use a non-`latest` bootstrap tag, and be revoked and removed before any release-candidate publication.
 
 ## 17.5 Release Gates
 

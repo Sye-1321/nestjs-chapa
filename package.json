@@ -1,7 +1,6 @@
 {
   "name": "@sye1321/nestjs-chapa",
   "version": "0.0.0",
-  "private": true,
   "description": "Community-maintained NestJS integration for Chapa",
   "keywords": [
     "nestjs",
@@ -18,6 +17,9 @@
     "url": "https://github.com/Sye-1321/nestjs-chapa/issues"
   },
   "homepage": "https://github.com/Sye-1321/nestjs-chapa#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "engines": {
     "node": "^22.0.0 || ^24.0.0"
@@ -54,8 +56,8 @@
   },
   "scripts": {
     "clean": "node scripts/clean.mjs",
-    "format": "prettier --write src test scripts examples README.md CONTRIBUTING.md package.json .github/workflows/ci.yml",
-    "format:check": "prettier --check src test scripts examples README.md CONTRIBUTING.md package.json .github/workflows/ci.yml",
+    "format": "prettier --write src test scripts examples docs/guides README.md CONTRIBUTING.md GOVERNANCE.md package.json .changeset/config.json .github/workflows/*.yml",
+    "format:check": "prettier --check src test scripts examples docs/guides README.md CONTRIBUTING.md GOVERNANCE.md package.json .changeset/config.json .github/workflows/*.yml",
     "lint": "eslint src test scripts examples",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.examples.json --noEmit",
     "build": "node scripts/build.mjs",
@@ -78,6 +80,7 @@
     "pack:check:built": "node scripts/pack-check.mjs",
     "test:consumers": "pnpm build && pnpm test:consumers:built",
     "test:consumers:built": "node scripts/test-consumers.mjs",
+    "smoke:sandbox": "pnpm build && node scripts/sandbox-smoke.mjs",
     "test": "pnpm typecheck && pnpm build && pnpm test:built && pnpm test:consumers:built",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm clean && pnpm build && pnpm api:check && pnpm test:built && pnpm test:coverage:built && pnpm determinism:check && pnpm pack:check:built && pnpm test:consumers:built"
   },
