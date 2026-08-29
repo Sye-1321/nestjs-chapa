@@ -1,0 +1,165 @@
+name: Publish release candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Require the selected current main commit
+        shell: bash
+        run: |
+          test "${GITHUB_REF}" = refs/heads/main
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Enable pinned package managers
+        run: |
+          corepack enable
+          npm install --global npm@11.5.2
+      - name: Offline verification
+        env:
+          CHAPA_SECRET_KEY: ''
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm verify
+          pnpm changeset:status
+          node scripts/release-preflight.mjs rc
+      - name: Pack exact candidate
+        shell: bash
+        run: |
+          version="$(node scripts/release-preflight.mjs rc)"
+          mkdir -p .artifacts/release
+          npm pack --pack-destination .artifacts/release
+          node scripts/release-preflight.mjs integrity ".artifacts/release/sye1321-nestjs-chapa-${version}.tgz" > .artifacts/release/integrity.txt
+          printf '%s' "${version}" > .artifacts/release/version.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-candidate
+          path: .artifacts/release
+          if-no-files-found: error
+          retention-days: 1
+
+  sandbox:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: chapa-test-mode
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Protected Chapa Test Mode smoke
+        env:
+          CHAPA_SECRET_KEY: ${{ secrets.CHAPA_SECRET_KEY }}
+        run: pnpm smoke:sandbox
+
+  publish:
+    needs: sandbox
+    runs-on: ubuntu-latest
+    environment: npm-release
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      version: ${{ steps.candidate.outputs.version }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: npm install --global npm@11.5.2
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: release-candidate
+          path: .artifacts/release
+      - name: Read candidate
+        id: candidate
+        shell: bash
+        run: echo "version=$(cat .artifacts/release/version.txt)" >> "${GITHUB_OUTPUT}"
+      - name: Publish once or verify a matching existing version
+        shell: bash
+        run: |
+          version="${{ steps.candidate.outputs.version }}"
+          tarball=".artifacts/release/sye1321-nestjs-chapa-${version}.tgz"
+          expected="$(cat .artifacts/release/integrity.txt)"
+          lookup_error="$(mktemp)"
+          if existing="$(npm view "@sye1321/nestjs-chapa@${version}" dist.integrity 2>"${lookup_error}")"; then
+            test -n "${existing}"
+          elif grep -Eq '^npm (error|ERR!) code E404|404 Not Found - GET https://registry\.npmjs\.org/' "${lookup_error}"; then
+            existing=''
+            echo 'Registry confirmed the exact version does not exist; publication may continue.'
+          else
+            echo 'npm registry lookup failed without a confirmed E404; refusing to publish.'
+            exit 1
+          fi
+          rm -f "${lookup_error}"
+          if [ -z "${existing}" ]; then
+            npm publish "${tarball}" --access public --tag rc
+            existing="$(npm view "@sye1321/nestjs-chapa@${version}" dist.integrity)"
+          fi
+          test "${existing}" = "${expected}"
+          test "$(npm view "@sye1321/nestjs-chapa@${version}" version)" = "${version}"
+          test -n "$(npm view "@sye1321/nestjs-chapa@${version}" dist.attestations.provenance.url)"
+          test "$(npm view @sye1321/nestjs-chapa dist-tags.rc)" = "${version}"
+
+  consumers:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Verify registry-installed consumers
+        env:
+          CHAPA_SECRET_KEY: ''
+        run: node scripts/test-consumers.mjs --package-spec "@sye1321/nestjs-chapa@${{ needs.publish.outputs.version }}"
+
+  github-prerelease:
+    needs: [publish, consumers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Create or verify GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.publish.outputs.version }}
+        shell: bash
+        run: |
+          tag="v${VERSION}"
+          if gh release view "${tag}" --json isPrerelease,targetCommitish >/tmp/release.json 2>/dev/null; then
+            node -e "const r=require('/tmp/release.json'); if(!r.isPrerelease || r.targetCommitish!==process.env.GITHUB_SHA) process.exit(1)"
+          else
+            gh release create "${tag}" --prerelease --target "${GITHUB_SHA}" --title "${tag}" --generate-notes
+          fi
