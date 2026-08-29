@@ -4,19 +4,15 @@ All release workflows are manually dispatched from `main`. They never run for pu
 
 ## GitHub environments
 
-- `npm-bootstrap`: protected one-time bootstrap environment. Add a short-lived granular `NPM_BOOTSTRAP_TOKEN`, use it once, then revoke it and remove the secret.
 - `chapa-test-mode`: protected RC smoke environment. Its only secret is `CHAPA_SECRET_KEY`, used only for the minimal Test Mode lifecycle.
 - `npm-release`: protected release-approval environment. It contains no npm token; RC publication authenticates through npm OIDC Trusted Publishing.
 
-## Namespace bootstrap and RC handoff
+## Namespace bootstrap status
 
-1. Merge M6-E.
-2. Create a short-lived granular npm bootstrap token and store it as `NPM_BOOTSTRAP_TOKEN` in `npm-bootstrap`.
-3. Manually run `bootstrap-npm.yml` once from `main`.
-4. Configure the npm Trusted Publisher with GitHub user/organization `Sye-1321`, repository `nestjs-chapa`, workflow `release.yml`, environment `npm-release`, and allowed action `npm publish`.
-5. Revoke the bootstrap token and remove the GitHub environment secret.
-6. Proceed to the M6-F RC version freeze.
+Namespace bootstrap is complete and its workflow and temporary credentials are retired. Versions `0.0.0-bootstrap.3` and `0.0.0-bootstrap.4` are historical namespace-bootstrap artifacts, not release candidates. npm assigned `latest` to the first package publication, and it currently points to `0.0.0-bootstrap.4`; this historical tag state does not make either artifact a normal release.
 
-The bootstrap artifact is not an RC and must never receive `latest`. Actual prerelease and stable publication remains OIDC Trusted-Publishing-only. The bootstrap exception exists solely because npm requires an existing package before trust configuration; it uses protected GitHub Actions, provenance, the `bootstrap` tag, temporary credentials, and immediate revocation.
+Trusted Publishing through `release.yml` is now the only npm publication path. The npm Trusted Publisher is bound to GitHub user/organization `Sye-1321`, repository `nestjs-chapa`, workflow `release.yml`, environment `npm-release`, and action `npm publish`.
 
-After M6-F freezes an RC version, manually run `release.yml`. It verifies offline, performs the protected Test Mode smoke, publishes or verifies the exact RC tarball, tests registry consumers on Node 22 and 24, and finally creates the matching GitHub prerelease.
+The first RC is frozen in the repository but has not yet been published. A maintainer may manually run `release.yml` from the selected current `main` commit. It verifies offline, builds the exact candidate before the protected Test Mode smoke, publishes that tarball with `--tag rc --provenance`, waits for bounded registry visibility, verifies its exact version and integrity plus the `rc` dist-tag, tests registry-installed consumers on Node 22 and 24, and finally creates the matching GitHub prerelease.
+
+Provenance enforcement is the combination of npm OIDC Trusted Publishing and the explicit supported `npm publish --provenance` mechanism. The workflow does not assert `dist.attestations.provenance.url`, because the current npm registry/CLI does not expose that field reliably. Exact registry integrity verification remains independent and fail-closed.

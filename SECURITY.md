@@ -2,13 +2,13 @@
 
 ## Supported Versions
 
-Currently, there is no stable released version. The repository is in the pre-release development phase. However, vulnerability reports affecting the current development branch (`main`) are still welcomed.
+The project is entering its release-candidate line, but no RC or stable release is claimed until it is published. Vulnerability reports affecting the current development branch (`main`) are welcomed.
 
 | Version | Supported          |
 | ------- | ------------------ |
 | `main`  | :white_check_mark: |
 
-A complete released-version support matrix will be published here when versioned releases begin.
+Published RC versions will be added to this matrix when the RC line begins. A complete released-version support matrix will follow with versioned releases.
 
 ## Reporting a Vulnerability
 
