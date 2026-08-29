@@ -6,6 +6,15 @@ import test from 'node:test';
 const repository = resolve(new URL('../..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const read = (path) => readFile(resolve(repository, path), 'utf8');
 
+const assertPnpmEnabledBeforeCacheSetup = (workflow) => {
+  const steps = workflow.split(/\n(?=\s{6}- )/);
+  for (const [index, step] of steps.entries()) {
+    if (step.includes('actions/setup-node@') && step.includes('cache: pnpm')) {
+      assert.match(steps[index - 1], /run: corepack enable/);
+    }
+  }
+};
+
 test('release workflow is manual, OIDC-enabled, and token-free', async () => {
   const workflow = await read('.github/workflows/release.yml');
   assert.match(workflow, /on:\s*\n\s*workflow_dispatch:/);
@@ -34,4 +43,9 @@ test('bootstrap workflow is manual, protected, and cannot assign latest', async 
 test('normal CI remains provider-offline and cannot invoke sandbox smoke', async () => {
   const workflow = await read('.github/workflows/ci.yml');
   assert.doesNotMatch(workflow, /smoke:sandbox|sandbox-smoke|CHAPA_SECRET_KEY/);
+});
+
+test('pnpm is enabled before cached Node setup in release workflows', async () => {
+  assertPnpmEnabledBeforeCacheSetup(await read('.github/workflows/bootstrap-npm.yml'));
+  assertPnpmEnabledBeforeCacheSetup(await read('.github/workflows/release.yml'));
 });
