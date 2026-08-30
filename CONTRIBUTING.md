@@ -22,7 +22,7 @@ Short-lived branches and pull requests are the normal public-change workflow. Al
 - **Provider behavior**: Read the frozen V1 contract and retained evidence before changing provider behavior. Never guess unresolved behavior or use real credentials.
 - **Tests Required**: Behavior and code changes require appropriate tests. Documentation or governance-only changes require applicable validation, not meaningless tests. Contributors must not weaken tests simply to make a change pass.
 - **Documentation Required**: If your changes impact the public API or behavior, update the documentation.
-- **Changesets**: Package-facing changes warrant an appropriate Changeset. Documentation and governance-only changes may be marked N/A. The package is not yet published; releases are maintainer-controlled.
+- **Changesets**: Package-facing changes warrant an appropriate Changeset. Documentation and governance-only changes may be marked N/A. Historical namespace-bootstrap artifacts exist on npm, but normal releases remain maintainer-controlled through OIDC Trusted Publishing.
 
 Run the relevant provider-offline checks before opening a pull request:
 

@@ -13,11 +13,6 @@ if (manifest.private === true || manifest.publishConfig?.access !== 'public')
 if (command === 'rc') {
   if (!/^0\.\d+\.\d+-rc\.\d+$/.test(manifest.version)) throw new Error('package version must be an M6 RC');
   console.log(manifest.version);
-} else if (command === 'bootstrap-version') {
-  if (manifest.version !== '0.0.0') throw new Error('bootstrap source version must remain 0.0.0');
-  const runNumber = process.env.GITHUB_RUN_NUMBER;
-  if (!/^\d+$/.test(runNumber ?? '')) throw new Error('GITHUB_RUN_NUMBER must be numeric');
-  console.log(`0.0.0-bootstrap.${runNumber}`);
 } else if (command === 'integrity') {
   const tarball = process.argv[3];
   if (!tarball) throw new Error('tarball path is required');

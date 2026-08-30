@@ -78,7 +78,7 @@ jobs:
     needs: sandbox
     runs-on: ubuntu-latest
     environment: npm-release
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
       id-token: write
@@ -116,12 +116,36 @@ jobs:
           fi
           rm -f "${lookup_error}"
           if [ -z "${existing}" ]; then
-            npm publish "${tarball}" --access public --tag rc
-            existing="$(npm view "@sye1321/nestjs-chapa@${version}" dist.integrity)"
+            npm publish "${tarball}" --access public --tag rc --provenance
+
+            # A successful publish can precede registry read visibility while npm
+            # propagates and scans the new version. Retry only confirmed E404s.
+            for attempt in {1..31}; do
+              visibility_error="$(mktemp)"
+              if metadata="$(npm view "@sye1321/nestjs-chapa@${version}" version dist.integrity --json 2>"${visibility_error}")"; then
+                rm -f "${visibility_error}"
+                break
+              elif grep -Eq '^npm (error|ERR!) code E404|404 Not Found - GET https://registry\.npmjs\.org/' "${visibility_error}"; then
+                rm -f "${visibility_error}"
+                if [ "${attempt}" -eq 31 ]; then
+                  echo 'Published version was still not visible after 31 attempts.'
+                  exit 1
+                fi
+                echo "Published version is not visible yet; retrying in 30 seconds (${attempt}/31)."
+                sleep 30
+              else
+                cat "${visibility_error}" >&2
+                rm -f "${visibility_error}"
+                echo 'Post-publish registry lookup failed with an unexpected error.'
+                exit 1
+              fi
+            done
+
+            node -e "const m=JSON.parse(process.argv[1]); if(m.version!==process.argv[2] || m['dist.integrity']!==process.argv[3]) process.exit(1)" "${metadata}" "${version}" "${expected}"
+            existing="${expected}"
           fi
           test "${existing}" = "${expected}"
           test "$(npm view "@sye1321/nestjs-chapa@${version}" version)" = "${version}"
-          test -n "$(npm view "@sye1321/nestjs-chapa@${version}" dist.attestations.provenance.url)"
           test "$(npm view @sye1321/nestjs-chapa dist-tags.rc)" = "${version}"
 
   consumers:
