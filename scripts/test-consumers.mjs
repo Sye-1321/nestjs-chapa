@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { consumerMatrix } from '../test/consumers/matrix.mjs';
+import { registryDependencyVersion } from './registry-package-spec.mjs';
 
 const repository = resolve(new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const artifacts = resolve(repository, '.artifacts');
@@ -11,8 +12,7 @@ const packageSpecIndex = process.argv.indexOf('--package-spec');
 const packageSpec = packageSpecIndex === -1 ? undefined : process.argv[packageSpecIndex + 1];
 if (packageSpecIndex !== -1 && (!packageSpec || packageSpec.startsWith('--')))
   throw new Error('--package-spec requires an explicit npm package spec');
-if (packageSpec && !/^@sye1321\/nestjs-chapa@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageSpec))
-  throw new Error('--package-spec must identify an exact @sye1321/nestjs-chapa version');
+const registryVersion = packageSpec ? registryDependencyVersion(packageSpec) : undefined;
 const environment = {
   ...process.env,
   CHAPA_SECRET_KEY: undefined,
@@ -44,7 +44,7 @@ await rm(consumersDirectory, { recursive: true, force: true });
 if (!packageSpec) await mkdir(packageDirectory, { recursive: true });
 await mkdir(consumersDirectory, { recursive: true });
 const dependencySpec = packageSpec
-  ? packageSpec
+  ? registryVersion
   : `file:${resolve(
       packageDirectory,
       JSON.parse(run('npm', ['pack', '--json', '--pack-destination', packageDirectory], repository))[0].filename
@@ -157,6 +157,7 @@ catch (error) { if (error instanceof Error && error.message === 'deep import une
     )}\n`
   );
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund'], consumer);
+  run('npm', ['ls', '@sye1321/nestjs-chapa', '--depth=0'], consumer);
   const tsc = resolve(consumer, 'node_modules', 'typescript', 'bin', 'tsc');
   run(process.execPath, [tsc, '-p', 'tsconfig.json'], consumer);
   run(process.execPath, [tsc, '-p', 'tsconfig.bundler.json'], consumer);
