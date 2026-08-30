@@ -2,13 +2,12 @@
 
 ## Supported Versions
 
-The project is entering its release-candidate line, but no RC or stable release is claimed until it is published. Vulnerability reports affecting the current development branch (`main`) are welcomed.
+The release-candidate line has begun with `0.1.0-rc.0`. Vulnerability reports affecting that release or the current development branch (`main`) are welcomed. No stable release is claimed.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| `main`  | :white_check_mark: |
-
-Published RC versions will be added to this matrix when the RC line begins. A complete released-version support matrix will follow with versioned releases.
+| Version      | Supported          |
+| ------------ | ------------------ |
+| `0.1.0-rc.0` | :white_check_mark: |
+| `main`       | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
