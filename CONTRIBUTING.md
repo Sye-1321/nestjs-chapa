@@ -24,6 +24,8 @@ Short-lived branches and pull requests are the normal public-change workflow. Al
 - **Documentation Required**: If your changes impact the public API or behavior, update the documentation.
 - **Changesets**: Package-facing changes warrant an appropriate Changeset. Documentation and governance-only changes may be marked N/A. Historical namespace-bootstrap artifacts exist on npm, but normal releases remain maintainer-controlled through OIDC Trusted Publishing.
 
+Release candidates and stable releases use the same protected manual `release.yml` workflow with npm Trusted Publishing and provenance. Its fail-closed package-version classification selects `rc` for supported release candidates and `latest` only for the M7 `1.0.0` release; operators cannot provide an arbitrary dist-tag. Do not publish releases locally.
+
 Run the relevant provider-offline checks before opening a pull request:
 
 ```sh
