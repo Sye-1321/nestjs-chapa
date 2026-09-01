@@ -2,12 +2,13 @@
 
 ## Supported Versions
 
-The release-candidate line has begun with `0.1.0-rc.0`. Vulnerability reports affecting that release or the current development branch (`main`) are welcomed. No stable release is claimed.
+The `1.0.x` stable line is supported. The `0.1.0-rc.0` release candidate is historical and superseded by the frozen stable line; this policy does not claim that npm or GitHub publication of `1.0.0` has already completed. Vulnerability reports affecting the supported stable line or the current development branch (`main`) are welcomed.
 
 | Version      | Supported          |
 | ------------ | ------------------ |
-| `0.1.0-rc.0` | :white_check_mark: |
+| `1.0.x`      | :white_check_mark: |
 | `main`       | :white_check_mark: |
+| `0.1.0-rc.0` | :x:                |
 
 ## Reporting a Vulnerability
 
