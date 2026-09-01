@@ -1,6 +1,6 @@
 # Roadmap
 
-This roadmap outlines the planned milestones for `@sye1321/nestjs-chapa` to reach a stable 1.0 release, as defined in the technical specification.
+This roadmap records the milestones that delivered the stable `@sye1321/nestjs-chapa` 1.0 release, as defined in the technical specification.
 
 - **M0 - Specification**: Approved architecture, public boundary, preliminary endpoint matrix.
 - **M0.5 - Contract verification (closed)**: Evidence inventory, adjudication, fixtures, and contract freeze completed.
@@ -10,4 +10,6 @@ This roadmap outlines the planned milestones for `@sye1321/nestjs-chapa` to reac
 - **M4 - Metadata (completed)**: Banks and supported currencies. Provider refunds remain outside version 1.
 - **M5 - Webhooks and NestJS integration (completed)**: Raw-body verification, event parsing, module registration, and service integration.
 - **M6 - Release candidate (completed)**: Repository hardening, documentation, consumer tests, security review, protected sandbox smoke, and the `0.1.0-rc.0` release completed.
-- **M7 - Stable 1.0 (stable freeze; publication pending)**: The `1.0.0` package is frozen for review. Completion still requires the protected npm and GitHub stable release after this change is merged and CI is green.
+- **M7 - Stable 1.0 (completed)**: `1.0.0` was published to npm (`latest`) with Trusted Publishing provenance after protected Test Mode smoke, then released normally on GitHub from the immutable `v1.0.0` source tag; Node 22 and 24 registry consumers passed.
+
+Future work enters normal maintenance and evidence-driven evolution. New provider domains require separate evidence and specification milestones.

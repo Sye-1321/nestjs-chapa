@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-The `1.0.x` stable line is supported. The `0.1.0-rc.0` release candidate is historical and superseded by the frozen stable line; this policy does not claim that npm or GitHub publication of `1.0.0` has already completed. Vulnerability reports affecting the supported stable line or the current development branch (`main`) are welcomed.
+The published `1.0.x` stable line is supported. The `0.1.0-rc.0` release candidate is historical and superseded. Vulnerability reports affecting the supported stable line or the current development branch (`main`) are welcomed.
 
 | Version      | Supported          |
 | ------------ | ------------------ |
