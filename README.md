@@ -1,12 +1,23 @@
 # `@sye1321/nestjs-chapa`
 
+[![npm version](https://img.shields.io/npm/v/%40sye1321%2Fnestjs-chapa)](https://www.npmjs.com/package/@sye1321/nestjs-chapa)
+[![Provider-offline CI](https://github.com/Sye-1321/nestjs-chapa/actions/workflows/ci.yml/badge.svg)](https://github.com/Sye-1321/nestjs-chapa/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Sye-1321/nestjs-chapa/actions/workflows/codeql.yml/badge.svg)](https://github.com/Sye-1321/nestjs-chapa/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A community-maintained NestJS integration for Chapa. It is not an official Chapa SDK and is not endorsed by Chapa.
 
-The package supports Node.js 22 and 24 with NestJS 10 or 11. Refunds, transfers, subaccounts, subscriptions, FX, and tax features are outside V1.
+**Stable: v1.0.0** — tested with Node.js 22 and 24, NestJS 10 and 11, and both ESM and CommonJS consumers.
+
+V1 provides hosted payment initialization, transaction verification, hosted checkout cancellation, banks and currencies metadata, transaction reference generation, raw-body webhook verification, typed errors, bounded retries for eligible safe reads, and synchronous or asynchronous NestJS configuration. Refunds, transfers, subaccounts, subscriptions, direct charge, virtual accounts, balances, FX, and tax features are outside V1.
 
 For deployment safety, lifecycle recovery, retry boundaries, webhook security, and operational ownership, read the [production integration guide](docs/guides/production-integration.md).
 
 ## Install
+
+```sh
+npm install @sye1321/nestjs-chapa
+```
 
 ```sh
 pnpm add @sye1321/nestjs-chapa
