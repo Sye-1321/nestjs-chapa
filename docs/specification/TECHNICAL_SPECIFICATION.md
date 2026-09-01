@@ -2,13 +2,13 @@
 
 ## Full Technical Specification & Implementation Contract
 
-**Version:** 1.0 - M6 Release-Candidate Hardening
-**Status:** APPROVED V1 CONTRACT FREEZE — M0.5 AND M1-M5 COMPLETE; M6 CURRENT
+**Version:** 1.0 - M7 Stable Release Freeze
+**Status:** APPROVED V1 CONTRACT FREEZE — M0.5 AND M1-M6 COMPLETE; M7 STABLE FREEZE PREPARED, PUBLICATION PENDING
 **Project owner & maintainer:** Sye (GitHub: `Sye-1321`)  
 **Repository:** `Sye-1321/nestjs-chapa`  
 **npm package:** `@sye1321/nestjs-chapa`  
-**Date:** 29 August 2026
-**Execution gate:** M6 release-candidate hardening against the authoritative M0.5 provider contract freeze
+**Date:** 1 September 2026
+**Execution gate:** M7 stable `1.0.0` publication after release-freeze review, merge, and green CI
 
 A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment Platform. Designed with framework-independent core architecture, evidence-driven contract boundaries, and zero implicit network retries.
 
@@ -20,12 +20,12 @@ A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment P
 |---|---|
 | Document title | NestJS Chapa - Technical Specification |
 | Version | 1.0 |
-| Status | APPROVED V1 CONTRACT FREEZE — M0.5 and M1-M5 complete; M6 release-candidate hardening current |
+| Status | APPROVED V1 CONTRACT FREEZE — M0.5 and M1-M6 complete; M7 stable freeze prepared and publication pending |
 | Primary owner | Sye (GitHub: `Sye-1321`) |
 | Implementation target | Repository `Sye-1321/nestjs-chapa` and npm package `@sye1321/nestjs-chapa` |
-| Approval gate | M0.5 contract freeze and M1-M5 implementation are complete; M6 release-candidate hardening is authorized while the frozen provider contract remains authoritative. |
+| Approval gate | M0.5 contract freeze and M1-M6 are complete; M7 remains incomplete until the protected stable npm and GitHub publication succeeds. |
 | Source-of-truth order | Official Chapa documentation; maintainer-adjudicated sanitized Test Mode evidence; official NestJS, Node.js, and npm documentation. |
-| Last updated | 29 August 2026 |
+| Last updated | 1 September 2026 |
 
 ### Revision History
 
@@ -34,6 +34,7 @@ A community-maintained, Ethiopian-led NestJS integration for the Chapa Payment P
 | 1.0 Final | 6 Aug 2026 | Approved pre-implementation specification. Confirms product scope, repository and package identity, M0.5 contract verification, public API, governance, testing, release controls, and acceptance criteria. |
 | 1.0 M0.5 Contract Freeze | 25 Aug 2026 | Applied the maintainer-adjudicated M0.5 contract freeze: narrowed version-1 scope, synchronized evidence-backed normalization and webhook security rules, recorded explicit deferrals, and retained F7 as the gate before M1. |
 | 1.0 M6 Lifecycle Sync | 29 Aug 2026 | Synchronized lifecycle metadata after completion of M0.5 and M1-M5 for current M6 release-candidate hardening; no frozen behavioral contract changed. |
+| 1.0 M7 Stable Freeze | 1 Sep 2026 | Recorded completion of M6 and preparation of the `1.0.0` stable freeze while retaining review, merge, green CI, and publication as remaining M7 gates; no frozen behavioral contract changed. |
 
 ## Table of Contents
 
@@ -98,7 +99,7 @@ The package is a community-maintained NestJS integration. Documentation, naming,
 
 ## 2.1 Purpose
 
-This document is the implementation contract for `Sye-1321/nestjs-chapa`. It fixes the product boundary, public API, architecture, reliability policy, security requirements, package structure, M0.5 evidence gate, testing obligations, release controls, and acceptance criteria. M0.5 and M1-M5 are complete, and M6 release-candidate hardening is current.
+This document is the implementation contract for `Sye-1321/nestjs-chapa`. It fixes the product boundary, public API, architecture, reliability policy, security requirements, package structure, M0.5 evidence gate, testing obligations, release controls, and acceptance criteria. M0.5 and M1-M6 are complete; the M7 `1.0.0` stable-freeze candidate is prepared, and acceptance and stable publication remain pending.
 
 ## 2.2 Goals
 
@@ -1023,7 +1024,7 @@ interface ChapaInstrumentationHooks {
 
 The Appendix F fixture manifest contains the three actual M0.5-B JSON fixtures. Adjudicated C/D/E sanitized observations are indexed in the approved contract-freeze matrix rather than misrepresented as fixtures.
 
-**[REQ-TEST-03]** M0.5 closed through F7 after every shipped safety-critical contract had sufficient D/V authority or was explicitly constrained, deferred, excluded, or fail-closed. Refunds are excluded rather than treated as a missing version-1 fixture. The coherent M0.5-F work was merged and verified before the now-completed M1-M5 implementation; M6 hardening remains bound by the same freeze.
+**[REQ-TEST-03]** M0.5 closed through F7 after every shipped safety-critical contract had sufficient D/V authority or was explicitly constrained, deferred, excluded, or fail-closed. Refunds are excluded rather than treated as a missing version-1 fixture. The coherent M0.5-F work was merged and verified before the now-completed M1-M6 work; the M7 stable freeze and publication remain bound by the same freeze.
 
 ## 16.2 Test Layers
 
@@ -1221,8 +1222,8 @@ nestjs-chapa/
 | M3 - Payments | Initialize, verify, cancel, references. | Evidence-backed contract tests and documented recovery flows pass against the frozen D/V/U contract. |
 | M4 - Metadata | Banks and supported currencies. | Evidence-honest normalization and failure tests pass. |
 | M5 - Webhooks | Raw-body verification, event parsing, Express/Fastify examples. | M0.5-reproduced provider-derived X1/C1 vectors and deterministic invalid/mutation vectors pass. |
-| M6 - Release candidate (current) | Docs, consumer tests, security review, protected sandbox smoke. | 0.x release candidate published with provenance. |
-| M7 - Stable 1.0 | Public npm and GitHub release. | All acceptance criteria satisfied. |
+| M6 - Release candidate (completed) | Docs, consumer tests, security review, protected sandbox smoke. | Completed: `0.1.0-rc.0` published with provenance. |
+| M7 - Stable 1.0 (publication pending) | Freeze `1.0.0`, then publish through the protected workflow after review, merge, and green CI. | Public npm and GitHub stable release; all acceptance criteria satisfied. |
 
 # 21. Acceptance Criteria
 
@@ -1427,7 +1428,7 @@ Fixture review requires two checks: no secret or personal data remains, and the 
 | Core boundary | Framework-independent internally; not a separate public Node.js SDK in version 1. |
 | Provider evidence | F5 final matrix: 21 V, 9 U, 0 candidate-V; F6 normative changes applied. |
 | Version-1 scope | Hosted initialize, verify, bodyless hosted-checkout cancellation, banks, supported currencies, transaction references, and webhook verification; provider refunds excluded. |
-| Lifecycle | M0.5 contract freeze and M1-M5 complete; M6 release-candidate hardening current. |
+| Lifecycle | M0.5 contract freeze and M1-M6 complete; M7 `1.0.0` stable-freeze candidate prepared and protected publication pending. |
 | Retries | Safe reads only; no automatic retry for initialization, cancellation, or future side-effect operations. |
 | Webhooks | Required X1 over exact raw bytes; optional supplied C1 validates as secondary consistency only; unknown events preserved. |
 | Validation | SDK-owned public contracts with internal Zod; tolerant required-field response parsing. |
@@ -1435,4 +1436,4 @@ Fixture review requires two checks: no secret or personal data remains, and the 
 
 > **Implementation Gate**
 >
-> F7 verified specification/evidence alignment and closed M0.5. The coherent M0.5-F work was merged and verified, M1-M5 were completed against the frozen contract, and M6 release-candidate hardening is current. The provider contract freeze remains authoritative; this lifecycle synchronization does not alter normative behavior.
+> F7 verified specification/evidence alignment and closed M0.5. The coherent M0.5-F work was merged and verified, M1-M6 were completed against the frozen contract, and the M7 `1.0.0` stable-freeze candidate is prepared while acceptance after review, merge, and green CI and protected publication remain pending. The provider contract freeze remains authoritative; this lifecycle synchronization does not alter normative behavior.

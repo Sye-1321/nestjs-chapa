@@ -1,6 +1,6 @@
 {
   "name": "@sye1321/nestjs-chapa",
-  "version": "0.1.0-rc.0",
+  "version": "1.0.0",
   "description": "Community-maintained NestJS integration for Chapa",
   "keywords": [
     "nestjs",
