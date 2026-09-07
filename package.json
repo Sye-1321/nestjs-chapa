@@ -85,7 +85,7 @@
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm clean && pnpm build && pnpm api:check && pnpm test:built && pnpm test:coverage:built && pnpm determinism:check && pnpm pack:check:built && pnpm test:consumers:built"
   },
   "dependencies": {
-    "zod": "4.4.3"
+    "zod": "4.5.4"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0 || ^11.0.0",
