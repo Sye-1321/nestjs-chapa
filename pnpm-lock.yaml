@@ -52,8 +52,8 @@ importers:
         specifier: 5.2.1
         version: 5.2.1(supports-color@8.1.1)
       fastify:
-        specifier: 5.12.1
-        version: 5.12.1
+        specifier: 5.12.5
+        version: 5.12.5
       prettier:
         specifier: 3.9.6
         version: 3.9.6
@@ -850,8 +850,8 @@ packages:
   fastify@5.11.3:
     resolution: {integrity: sha512-W6hzDP8s0iSeL7LGwY6Oc/ZxuXWOvFEMs6p2L0Si415YRo27W5pBKdOTXxhemBDeSTAcpYf5evRA9onF2OYhPA==}
 
-  fastify@5.12.1:
-    resolution: {integrity: sha512-FWi+tQvwxR/PeRX7Z2mhfEF5ozJ3jn9asiiclzKXNSzJRHAYcU924aIOKAdHFJ+YIKieh3cqr1IwCOvTr41B3Q==}
+  fastify@5.12.5:
+    resolution: {integrity: sha512-OB2k1dlxs5/NAABqeKV2FUHkSD2BbENsCak8yULVcymn3fHIPDVa9TI3SDnJSWYSllZmSYuZXy2gTnsT+Sut1A==}
 
   fastq@1.20.1:
     resolution: {integrity: sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw==}
@@ -2556,7 +2556,7 @@ snapshots:
       semver: 7.8.5
       toad-cache: 3.7.4
 
-  fastify@5.12.1:
+  fastify@5.12.5:
     dependencies:
       '@fastify/ajv-compiler': 4.0.6
       '@fastify/error': 4.2.0
